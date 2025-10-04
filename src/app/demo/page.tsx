@@ -673,7 +673,7 @@ export default function DemoPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Projects 
-                <span className="text-sm font-normal text-gray-600 ml-2">(Click "Edit" to modify milestone payments & costs)</span>
+                <span className="text-sm font-normal text-gray-600 ml-2">(Click &quot;Edit&quot; to modify milestone payments & costs)</span>
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {projects.length} total project{projects.length !== 1 ? 's' : ''} • Adjust payment timing relative to income dates
@@ -708,7 +708,7 @@ export default function DemoPage() {
             <div>
               <h4 className="font-medium mb-2">💰 Edit Progress Payments & Costs:</h4>
               <ul className="space-y-1 text-blue-700">
-                <li>• Click "Edit Payments & Costs" on any project</li>
+                <li>• Click &quot;Edit Payments & Costs&quot; on any project</li>
                 <li>• Modify milestone payment amounts</li>
                 <li>• Adjust associated cost estimates</li>
                 <li>• Change payment timing (months)</li>

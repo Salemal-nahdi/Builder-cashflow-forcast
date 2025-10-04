@@ -363,7 +363,7 @@ export function XeroSettingsClient({
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Unmapped Transactions</h2>
           <p className="text-sm text-gray-600 mb-4">
-            These transactions couldn't be automatically mapped to projects. 
+            These transactions couldn&apos;t be automatically mapped to projects. 
             Review and map them manually or update your tracking categories in Xero.
           </p>
 

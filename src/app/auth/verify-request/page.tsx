@@ -12,7 +12,7 @@ export default function VerifyRequestPage() {
             Check your email
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            We've sent you a magic link to sign in. Click the link in your email to continue.
+            We&apos;ve sent you a magic link to sign in. Click the link in your email to continue.
           </p>
           <div className="mt-4 text-center">
             <a
