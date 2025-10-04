@@ -3,8 +3,8 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "18"
-  DATABASE_URL = "postgresql://builder_user:builder_pass@localhost:5432/builder_forecasting_dev"
+  NODE_VERSION = "18.19.1"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from = "/*"
