@@ -1,10 +1,11 @@
 import { format } from 'date-fns'
+import { Decimal } from '@prisma/client/runtime/library'
 
 interface SupplierClaim {
   id: string
   supplierName: string
   description: string | null
-  amount: number
+  amount: Decimal
   expectedDate: Date
   actualDate: Date | null
   status: string
@@ -82,7 +83,7 @@ export function SupplierClaimCard({ claim }: SupplierClaimCardProps) {
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">Amount</span>
           <span className="font-semibold text-gray-900">
-            ${claim.amount.toLocaleString()}
+            ${Number(claim.amount).toLocaleString()}
           </span>
         </div>
 
