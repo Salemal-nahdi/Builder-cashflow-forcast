@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { Decimal } from '@prisma/client/runtime/library'
 
 interface Project {
   id: string
   name: string
   description: string | null
-  contractValue: number | null
+  contractValue: Decimal | null
   startDate: Date | null
   endDate: Date | null
   status: string
@@ -18,14 +19,14 @@ interface Project {
     name: string
     expectedDate: Date
     status: string
-    amount: number | null
+    amount: Decimal | null
   }>
   supplierClaims: Array<{
     id: string
     supplierName: string
     expectedDate: Date
     status: string
-    amount: number
+    amount: Decimal
   }>
 }
 
@@ -89,7 +90,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         {project.contractValue && (
           <div className="mb-4">
             <p className="text-2xl font-bold text-gray-900">
-              ${project.contractValue.toLocaleString()}
+              ${Number(project.contractValue).toLocaleString()}
             </p>
             <p className="text-sm text-gray-600">Contract Value</p>
           </div>
