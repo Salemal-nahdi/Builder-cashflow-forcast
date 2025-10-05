@@ -66,6 +66,23 @@ export default async function ScenarioDetailPage({ params }: ScenarioDetailPageP
     },
   })
 
+  // Transform projects to convert Decimal to number for the component
+  const transformedProjects = projects.map(project => ({
+    ...project,
+    milestones: project.milestones.map(m => ({
+      ...m,
+      amount: m.amount ? Number(m.amount) : null,
+    })),
+    supplierClaims: project.supplierClaims.map(c => ({
+      ...c,
+      amount: Number(c.amount),
+    })),
+    materialOrders: project.materialOrders.map(o => ({
+      ...o,
+      amount: Number(o.amount),
+    })),
+  }))
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -121,7 +138,7 @@ export default async function ScenarioDetailPage({ params }: ScenarioDetailPageP
           <div>
             <ScenarioEditor 
               scenario={scenario}
-              projects={projects}
+              projects={transformedProjects}
             />
           </div>
 
