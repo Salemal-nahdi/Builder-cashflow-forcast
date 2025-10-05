@@ -411,7 +411,7 @@ export default function DemoPage() {
     setProjects(prev => prev.filter(p => p.id !== projectId))
   }
 
-  const totalContractValue = projects.reduce((sum, project) => sum + project.contractValue, 0)
+  const totalContractValue = projects.reduce((sum, project) => sum + Number(project.contractValue), 0)
   const activeProjects = projects.filter(p => p.status === 'active').length
   const lastPeriodIndex = viewMode === 'weekly' ? 25 : 5
   const currentMonthNet = forecastData[lastPeriodIndex]?.net || 0
