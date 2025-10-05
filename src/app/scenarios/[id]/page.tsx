@@ -196,7 +196,7 @@ export default async function ScenarioDetailPage({ params }: ScenarioDetailPageP
                           )}
                           {shift.amountShift && (
                             <span>
-                              Amount: {shift.amountShift > 0 ? '+' : ''}${shift.amountShift.toLocaleString()}
+                              Amount: {Number(shift.amountShift) > 0 ? '+' : ''}${Number(shift.amountShift).toLocaleString()}
                             </span>
                           )}
                         </div>
