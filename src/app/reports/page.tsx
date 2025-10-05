@@ -70,7 +70,7 @@ export default async function ReportsPage() {
           <ReportGenerator 
             organizationId={organizationId}
             projects={projects}
-            organizationSettings={organization?.settings}
+            organizationSettings={organization?.settings || null}
           />
         </div>
 
