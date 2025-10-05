@@ -12,6 +12,17 @@ export interface VarianceMatch {
   confidenceScore: number
   status: 'matched' | 'disputed' | 'resolved'
   projectId?: string
+  cashEvent?: {
+    id: string
+    amount: number
+    scheduledDate: Date
+    sourceType: string
+    sourceId: string
+    project?: {
+      id: string
+      name: string
+    }
+  }
 }
 
 export interface ReconciliationResult {
