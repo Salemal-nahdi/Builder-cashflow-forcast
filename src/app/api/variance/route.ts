@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
     const basis = searchParams.get('basis') as 'cash' | 'accrual' || 'accrual'
 
     const reconciliationEngine = new ReconciliationEngine(session.user.organizationId)
-    const matches = await reconciliationEngine.getVarianceMatches(projectId, basis)
+    const matches = await reconciliationEngine.getVarianceMatches({
+      projectId: projectId || undefined,
+    })
 
     return NextResponse.json({
       matches,
