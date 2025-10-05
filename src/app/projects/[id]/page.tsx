@@ -171,7 +171,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 <div className="mt-6">
                   <p className="text-sm font-medium text-gray-600">Retention</p>
                   <p className="text-lg text-gray-900">
-                    {project.retentionPercentage}% held for {project.retentionReleaseDays || 84} days
+                    {Number(project.retentionPercentage)}% held for {project.retentionReleaseDays || 84} days
                   </p>
                 </div>
               )}
