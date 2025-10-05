@@ -26,16 +26,21 @@ export default async function SettingsPage() {
           roleAssignments: true,
         },
       },
-      notificationRules: {
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
-      },
     },
   })
 
   if (!organization) {
     redirect('/auth/signin')
   }
+
+  // Get notification rules separately
+  const notificationRules = await prisma.notificationRule.findMany({
+    where: { 
+      organizationId,
+      isActive: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
 
   // Check if user has management or finance role
   const userRoles = session.user.roles || []
@@ -98,7 +103,7 @@ export default async function SettingsPage() {
             <div>
               <NotificationSettings 
                 organizationId={organizationId}
-                notificationRules={organization.notificationRules}
+                notificationRules={notificationRules}
               />
             </div>
 
