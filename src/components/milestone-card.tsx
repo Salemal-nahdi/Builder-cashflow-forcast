@@ -1,15 +1,16 @@
 import { format } from 'date-fns'
+import { Decimal } from '@prisma/client/runtime/library'
 
 interface Milestone {
   id: string
   name: string
   description: string | null
-  contractValue: number
-  percentage: number | null
-  amount: number | null
+  contractValue: Decimal
+  percentage: Decimal | null
+  amount: Decimal | null
   expectedDate: Date
   actualDate: Date | null
-  retentionAmount: number | null
+  retentionAmount: Decimal | null
   retentionReleaseDate: Date | null
   status: string
   xeroInvoiceId: string | null
@@ -86,14 +87,14 @@ export function MilestoneCard({ milestone }: MilestoneCardProps) {
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">Amount</span>
           <span className="font-semibold text-gray-900">
-            ${(milestone.amount || milestone.contractValue * (milestone.percentage || 0) / 100).toLocaleString()}
+            ${(Number(milestone.amount) || Number(milestone.contractValue) * (Number(milestone.percentage) || 0) / 100).toLocaleString()}
           </span>
         </div>
 
         {milestone.percentage && (
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Percentage</span>
-            <span className="text-sm text-gray-900">{milestone.percentage}%</span>
+            <span className="text-sm text-gray-900">{Number(milestone.percentage)}%</span>
           </div>
         )}
 
@@ -113,12 +114,12 @@ export function MilestoneCard({ milestone }: MilestoneCardProps) {
           </div>
         )}
 
-        {milestone.retentionAmount && milestone.retentionAmount > 0 && (
+        {milestone.retentionAmount && Number(milestone.retentionAmount) > 0 && (
           <div className="pt-2 border-t border-gray-200">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Retention</span>
               <span className="text-sm text-gray-900">
-                ${milestone.retentionAmount.toLocaleString()}
+                ${Number(milestone.retentionAmount).toLocaleString()}
               </span>
             </div>
             {milestone.retentionReleaseDate && (
