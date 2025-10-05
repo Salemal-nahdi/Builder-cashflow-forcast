@@ -156,7 +156,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
               <div className="bg-white p-4 rounded-lg shadow">
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${projects.reduce((sum, p) => sum + (p.contractValue || 0), 0).toLocaleString()}
+                  ${projects.reduce((sum, p) => sum + (Number(p.contractValue) || 0), 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-white p-4 rounded-lg shadow">
