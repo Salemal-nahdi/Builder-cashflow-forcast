@@ -1,6 +1,7 @@
 'use client'
 
 import { format, isAfter, isBefore, addDays } from 'date-fns'
+import { Decimal } from '@prisma/client/runtime/library'
 
 interface Project {
   id: string
@@ -13,7 +14,7 @@ interface Project {
     expectedDate: Date
     actualDate: Date | null
     status: string
-    amount: number | null
+    amount: Decimal | null
   }>
   supplierClaims: Array<{
     id: string
@@ -21,7 +22,7 @@ interface Project {
     expectedDate: Date
     actualDate: Date | null
     status: string
-    amount: number
+    amount: Decimal
   }>
   materialOrders: Array<{
     id: string
@@ -29,7 +30,7 @@ interface Project {
     expectedDate: Date
     actualDate: Date | null
     status: string
-    amount: number
+    amount: Decimal
   }>
 }
 
@@ -55,7 +56,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
       type: 'milestone' as const,
       name: m.name,
       date: m.actualDate || m.expectedDate,
-      amount: m.amount || 0,
+      amount: Number(m.amount) || 0,
       status: m.status,
       isOverdue: m.status === 'pending' && m.expectedDate < new Date(),
     })),
@@ -64,7 +65,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
       type: 'supplier_claim' as const,
       name: c.supplierName,
       date: c.actualDate || c.expectedDate,
-      amount: c.amount,
+      amount: Number(c.amount),
       status: c.status,
       isOverdue: c.status === 'pending' && c.expectedDate < new Date(),
     })),
@@ -73,7 +74,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
       type: 'material_order' as const,
       name: o.supplierName,
       date: o.actualDate || o.expectedDate,
-      amount: o.amount,
+      amount: Number(o.amount),
       status: o.status,
       isOverdue: o.status === 'pending' && o.expectedDate < new Date(),
     })),
