@@ -278,7 +278,7 @@ export default async function DashboardPage() {
                       {project.milestones.length} milestones
                     </span>
                     <span className="text-sm font-medium text-gray-900">
-                      ${project.contractValue?.toLocaleString() || '0'}
+                      ${Number(project.contractValue || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
