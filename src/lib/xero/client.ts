@@ -154,13 +154,13 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.getBills(
+      const response = await this.client.accountingApi.getInvoices(
         this.tenantId,
         undefined, // ifModifiedSince
-        undefined, // where
+        'Type=="ACCPAY"', // where - filter for bills (accounts payable)
         undefined, // order
         undefined, // IDs
-        undefined, // billNumbers
+        undefined, // invoiceNumbers
         undefined, // contactIDs
         undefined, // statuses
         undefined, // page
@@ -171,7 +171,7 @@ export class XeroApiClient {
         undefined, // searchTerm
         modifiedSince?.toISOString()
       )
-      return response.body.bills || []
+      return response.body.invoices || []
     } catch (error) {
       console.error('Error fetching bills:', error)
       throw error
