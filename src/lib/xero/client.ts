@@ -337,8 +337,9 @@ export class XeroOAuth {
     const tokenSet = await client.apiCallback(process.env.XERO_REDIRECT_URI!)
     
     // Get tenant information
-    const connections = await client.connections
-    const tenant = connections[0] // Assuming single tenant for now
+    await client.updateTenants()
+    const tenants = client.tenants
+    const tenant = tenants[0] // Assuming single tenant for now
 
     return {
       accessToken: tokenSet.access_token!,
