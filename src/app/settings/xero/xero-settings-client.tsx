@@ -3,10 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+interface TrackingOption {
+  id: string
+  name: string
+  trackingCategoryId: string
+}
+
+interface TrackingCategory {
+  id: string
+  name: string
+  status: string
+  options: TrackingOption[]
+}
+
 interface XeroSettingsClientProps {
   xeroConnection: any
   projects: any[]
-  trackingCategories: any[]
+  trackingCategories: TrackingCategory[]
   contacts: any[]
   unmappedEvents: any[]
 }
