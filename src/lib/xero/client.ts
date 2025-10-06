@@ -49,8 +49,12 @@ export class XeroApiClient {
       await this.refreshToken(connection)
     }
 
-    // Set the tenant ID for API calls
-    this.client.setTenantId(connection.xeroTenantId)
+    // Set token for the client
+    await this.client.setTokenSet({
+      access_token: connection.accessToken,
+      refresh_token: connection.refreshToken,
+      token_type: 'Bearer',
+    })
   }
 
   private async refreshToken(connection: any): Promise<void> {
