@@ -241,31 +241,40 @@ export class ReconciliationEngine {
 
   private async saveVarianceMatches(matches: VarianceMatch[]): Promise<void> {
     for (const match of matches) {
-      await prisma.varianceMatch.upsert({
+      // Check if match already exists
+      const existing = await prisma.varianceMatch.findFirst({
         where: {
-          cashEventId_xeroTransactionId: {
-            cashEventId: match.cashEventId,
-            xeroTransactionId: match.xeroTransactionId,
-          },
-        },
-        update: {
-          amountVariance: match.amountVariance,
-          timingVariance: match.timingVariance,
-          confidenceScore: match.confidenceScore,
-          status: match.status,
-        },
-        create: {
-          organizationId: this.organizationId,
           cashEventId: match.cashEventId,
-          xeroTransactionId: match.xeroTransactionId,
-          xeroTransactionType: match.xeroTransactionType,
-          amountVariance: match.amountVariance,
-          timingVariance: match.timingVariance,
-          confidenceScore: match.confidenceScore,
-          status: match.status,
-          projectId: match.projectId,
+          actualEventId: match.actualEventId,
         },
       })
+
+      if (existing) {
+        await prisma.varianceMatch.update({
+          where: { id: existing.id },
+          data: {
+            amountVariance: match.amountVariance,
+            timingVariance: match.timingVariance,
+            confidenceScore: match.confidenceScore,
+            status: match.status,
+          },
+        })
+      } else {
+        await prisma.varianceMatch.create({
+          data: {
+            organizationId: this.organizationId,
+            cashEventId: match.cashEventId,
+            actualEventId: match.actualEventId,
+            xeroTransactionId: match.xeroTransactionId,
+            xeroTransactionType: match.xeroTransactionType,
+            amountVariance: match.amountVariance,
+            timingVariance: match.timingVariance,
+            confidenceScore: match.confidenceScore,
+            status: match.status,
+            projectId: match.projectId,
+          },
+        })
+      }
 
       // Update cash event status to 'actual'
       await prisma.cashEvent.update({
