@@ -347,7 +347,8 @@ export function auditLog(
 }
 
 // Export security configuration
-export { SecurityConfig, defaultConfig }
+export type { SecurityConfig }
+export { defaultConfig }
 
 // Security headers middleware factory
 export function createSecurityHeaders(config: Partial<SecurityConfig> = {}) {
