@@ -73,21 +73,8 @@ export class SyncEngine {
         throw new Error('Xero connection not found')
       }
 
-      // Check if token needs refresh
+      // Token refresh is handled by XeroApiClient
       let accessToken = xeroConnection.accessToken
-      if (xeroConnection.tokenExpiresAt && new Date() >= xeroConnection.tokenExpiresAt) {
-        const refreshResult = await refreshAccessToken(xeroConnection.refreshToken)
-        accessToken = refreshResult.access_token
-
-        await prisma.xeroConnection.update({
-          where: { id: xeroConnection.id },
-          data: {
-            accessToken: refreshResult.access_token,
-            refreshToken: refreshResult.refresh_token,
-            tokenExpiresAt: addDays(new Date(), 30), // Xero tokens typically last 30 minutes
-          }
-        })
-      }
 
       // Get last sync time for incremental sync
       const lastSync = await this.getLastSyncTime(job.organizationId, job.type)
