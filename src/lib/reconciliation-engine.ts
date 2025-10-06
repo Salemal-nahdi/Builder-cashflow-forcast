@@ -222,37 +222,6 @@ export class ReconciliationEngine {
     return matches
   }
 
-  private calculateMatchScore(cashEvent: any, transaction: any): number {
-    let score = 0
-
-    // Amount similarity (40% weight)
-    const amountDifference = Math.abs(cashEvent.amount - transaction.amount)
-    const amountSimilarity = Math.max(0, 1 - (amountDifference / Math.max(cashEvent.amount, transaction.amount)))
-    score += amountSimilarity * 0.4
-
-    // Date proximity (30% weight)
-    const daysDifference = Math.abs(differenceInDays(cashEvent.scheduledDate, transaction.date))
-    const dateSimilarity = Math.max(0, 1 - (daysDifference / 30)) // 30 days tolerance
-    score += dateSimilarity * 0.3
-
-    // Project matching (20% weight)
-    if (cashEvent.projectId === transaction.projectId) {
-      score += 0.2
-    }
-
-    // Type matching (10% weight)
-    const typeMatches = (
-      (cashEvent.sourceType === 'milestone' && transaction.type === 'invoice') ||
-      (cashEvent.sourceType === 'supplier_claim' && transaction.type === 'bill') ||
-      (cashEvent.sourceType === 'material_order' && transaction.type === 'bill')
-    )
-    if (typeMatches) {
-      score += 0.1
-    }
-
-    return Math.min(1, score)
-  }
-
   private createVarianceMatch(cashEvent: any, transaction: any, confidenceScore: number): VarianceMatch {
     const amountVariance = transaction.amount - cashEvent.amount
     const timingVariance = differenceInCalendarDays(transaction.date, cashEvent.scheduledDate)
