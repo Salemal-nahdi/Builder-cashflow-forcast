@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { getAccessToken, refreshAccessToken, getInvoices, getBills, getPayments, getProjects } from '@/lib/xero'
 import { addDays, parseISO } from 'date-fns'
 
