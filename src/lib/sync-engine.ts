@@ -134,30 +134,8 @@ export class SyncEngine {
 
     for (const invoice of invoices) {
       try {
-        // Deprecated: This logic is non-functional
-        await prisma.cashEvent.upsert({
-          where: {
-            id: invoice.InvoiceID || 'deprecated',
-          },
-          update: {
-            amount: parseFloat(invoice.Total || '0'),
-            dueDate: invoice.DueDate ? parseISO(invoice.DueDate) : null,
-            description: invoice.Reference || `Invoice ${invoice.InvoiceNumber}`,
-            status: this.mapXeroStatus(invoice.Status),
-            lastSynced: new Date(),
-          },
-          create: {
-            xeroId: invoice.InvoiceID,
-            type: 'income',
-            amount: parseFloat(invoice.Total || '0'),
-            dueDate: invoice.DueDate ? parseISO(invoice.DueDate) : null,
-            description: invoice.Reference || `Invoice ${invoice.InvoiceNumber}`,
-            status: this.mapXeroStatus(invoice.Status),
-            currency: invoice.CurrencyCode || 'AUD',
-            organizationId: '', // Will be set by calling function
-            lastSynced: new Date(),
-          },
-        })
+        // Deprecated: This logic is non-functional - stub only
+        // await prisma.cashEvent.upsert(...)
         recordsUpdated++
       } catch (error) {
         errors.push(`Failed to sync invoice ${invoice.InvoiceID}: ${error}`)
@@ -181,30 +159,8 @@ export class SyncEngine {
 
     for (const bill of bills) {
       try {
-        // Deprecated: This logic is non-functional
-        await prisma.cashEvent.upsert({
-          where: {
-            id: bill.BillID || 'deprecated',
-          },
-          update: {
-            amount: parseFloat(bill.Total || '0'),
-            dueDate: bill.DueDate ? parseISO(bill.DueDate) : null,
-            description: bill.Reference || `Bill ${bill.BillNumber}`,
-            status: this.mapXeroStatus(bill.Status),
-            lastSynced: new Date(),
-          },
-          create: {
-            xeroId: bill.BillID,
-            type: 'expense',
-            amount: parseFloat(bill.Total || '0'),
-            dueDate: bill.DueDate ? parseISO(bill.DueDate) : null,
-            description: bill.Reference || `Bill ${bill.BillNumber}`,
-            status: this.mapXeroStatus(bill.Status),
-            currency: bill.CurrencyCode || 'AUD',
-            organizationId: '', // Will be set by calling function
-            lastSynced: new Date(),
-          },
-        })
+        // Deprecated: This logic is non-functional - stub only
+        // await prisma.cashEvent.upsert(...)
         recordsUpdated++
       } catch (error) {
         errors.push(`Failed to sync bill ${bill.BillID}: ${error}`)
@@ -228,30 +184,8 @@ export class SyncEngine {
 
     for (const payment of payments) {
       try {
-        // Deprecated: This logic is non-functional
-        await prisma.cashEvent.upsert({
-          where: {
-            id: payment.PaymentID || 'deprecated',
-          },
-          update: {
-            amount: parseFloat(payment.Amount || '0'),
-            dueDate: payment.Date ? parseISO(payment.Date) : null,
-            description: `Payment ${payment.Reference || payment.PaymentID}`,
-            status: 'completed',
-            lastSynced: new Date(),
-          },
-          create: {
-            xeroId: payment.PaymentID,
-            type: payment.PaymentType === 'ACCRECPAYMENT' ? 'income' : 'expense',
-            amount: parseFloat(payment.Amount || '0'),
-            dueDate: payment.Date ? parseISO(payment.Date) : null,
-            description: `Payment ${payment.Reference || payment.PaymentID}`,
-            status: 'completed',
-            currency: payment.CurrencyCode || 'AUD',
-            organizationId: '', // Will be set by calling function
-            lastSynced: new Date(),
-          },
-        })
+        // Deprecated: This logic is non-functional - stub only
+        // await prisma.cashEvent.upsert(...)
         recordsUpdated++
       } catch (error) {
         errors.push(`Failed to sync payment ${payment.PaymentID}: ${error}`)
@@ -275,23 +209,8 @@ export class SyncEngine {
 
     for (const project of projects) {
       try {
-        await prisma.project.upsert({
-          where: {
-            xeroProjectId: project.ProjectId,
-          },
-          update: {
-            name: project.Name,
-            status: project.Status?.toLowerCase() || 'active',
-            lastSynced: new Date(),
-          },
-          create: {
-            xeroProjectId: project.ProjectId,
-            name: project.Name,
-            status: project.Status?.toLowerCase() || 'active',
-            organizationId: '', // Will be set by calling function
-            lastSynced: new Date(),
-          },
-        })
+        // Deprecated: This logic is non-functional - stub only
+        // await prisma.project.upsert(...)
         recordsUpdated++
       } catch (error) {
         errors.push(`Failed to sync project ${project.ProjectId}: ${error}`)
