@@ -27,7 +27,7 @@ export class XeroApiClient {
         'accounting.transactions.read',
         'projects.read',
         'offline_access'
-      ].join(' '),
+      ],
     })
   }
 
@@ -314,7 +314,7 @@ export class XeroOAuth {
         'accounting.transactions.read',
         'projects.read',
         'offline_access'
-      ].join(' '),
+      ],
     })
 
     return client.buildConsentUrl()
@@ -340,7 +340,7 @@ export class XeroOAuth {
         'accounting.transactions.read',
         'projects.read',
         'offline_access'
-      ].join(' '),
+      ],
     })
 
     const tokenSet = await client.apiCallback(process.env.XERO_REDIRECT_URI!)
