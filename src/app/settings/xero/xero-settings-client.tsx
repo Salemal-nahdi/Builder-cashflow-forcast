@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 interface TrackingOption {
   id: string
   name: string
-  trackingCategoryId: string
+  categoryId: string
 }
 
 interface TrackingCategory {
