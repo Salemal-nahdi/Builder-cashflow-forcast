@@ -71,6 +71,10 @@ export default async function VariancePage({ searchParams }: VariancePageProps) 
     ...match,
     amountVariance: Number(match.amountVariance),
     confidenceScore: Number(match.confidenceScore),
+    cashEvent: match.cashEvent ? {
+      ...match.cashEvent,
+      amount: Number(match.cashEvent.amount),
+    } : null,
   }))
 
   // Calculate summary statistics
