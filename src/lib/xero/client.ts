@@ -184,7 +184,7 @@ export class XeroApiClient {
     try {
       const response = await this.client.accountingApi.getPayments(
         this.tenantId,
-        modifiedSince?.toISOString(),
+        modifiedSince,
         undefined, // where
         undefined, // order
       )
