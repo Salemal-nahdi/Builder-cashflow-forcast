@@ -260,20 +260,25 @@ export class ReconciliationEngine {
           },
         })
       } else {
-        await prisma.varianceMatch.create({
-          data: {
-            organizationId: this.organizationId,
-            cashEventId: match.cashEventId,
-            actualEventId: match.actualEventId || null,
-            ...(match.xeroTransactionId && { xeroTransactionId: match.xeroTransactionId }),
-            ...(match.xeroTransactionType && { xeroTransactionType: match.xeroTransactionType }),
-            amountVariance: match.amountVariance,
-            timingVariance: match.timingVariance,
-            confidenceScore: match.confidenceScore,
-            status: match.status,
-            projectId: match.projectId || null,
-          },
-        })
+        const data: any = {
+          organizationId: this.organizationId,
+          cashEventId: match.cashEventId,
+          actualEventId: match.actualEventId || null,
+          amountVariance: match.amountVariance,
+          timingVariance: match.timingVariance,
+          confidenceScore: match.confidenceScore,
+          status: match.status,
+          projectId: match.projectId || null,
+        }
+        
+        if (match.xeroTransactionId) {
+          data.xeroTransactionId = match.xeroTransactionId
+        }
+        if (match.xeroTransactionType) {
+          data.xeroTransactionType = match.xeroTransactionType
+        }
+        
+        await prisma.varianceMatch.create({ data })
       }
 
       // Update cash event status to 'actual'
