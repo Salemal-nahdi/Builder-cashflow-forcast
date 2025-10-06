@@ -201,18 +201,9 @@ export class XeroApiClient {
     try {
       const response = await this.client.accountingApi.getBankTransactions(
         this.tenantId,
-        undefined, // ifModifiedSince
+        modifiedSince,
         undefined, // where
         undefined, // order
-        undefined, // IDs
-        undefined, // bankAccountIDs
-        undefined, // page
-        undefined, // includeArchived
-        undefined, // createdByMyApp
-        undefined, // unitdp
-        undefined, // summaryOnly
-        undefined, // searchTerm
-        modifiedSince?.toISOString()
       )
       return response.body.bankTransactions || []
     } catch (error) {
