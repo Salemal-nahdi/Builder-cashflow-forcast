@@ -141,7 +141,7 @@ export class XeroApiClient {
         undefined, // unitdp
         undefined, // summaryOnly
         undefined, // searchTerm
-        modifiedSince
+        modifiedSince?.toISOString()
       )
       return response.body.invoices || []
     } catch (error) {
@@ -169,7 +169,7 @@ export class XeroApiClient {
         undefined, // unitdp
         undefined, // summaryOnly
         undefined, // searchTerm
-        modifiedSince
+        modifiedSince?.toISOString()
       )
       return response.body.bills || []
     } catch (error) {
@@ -194,7 +194,7 @@ export class XeroApiClient {
         undefined, // includeArchived
         undefined, // createdByMyApp
         undefined, // unitdp
-        modifiedSince
+        modifiedSince?.toISOString()
       )
       return response.body.payments || []
     } catch (error) {
@@ -220,7 +220,7 @@ export class XeroApiClient {
         undefined, // unitdp
         undefined, // summaryOnly
         undefined, // searchTerm
-        modifiedSince
+        modifiedSince?.toISOString()
       )
       return response.body.bankTransactions || []
     } catch (error) {
