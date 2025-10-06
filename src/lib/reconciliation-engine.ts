@@ -521,7 +521,7 @@ export class ReconciliationEngine {
     return {
       id: match.id,
       cashEventId: match.cashEventId,
-      actualEventId: match.actualEventId,
+      actualEventId: match.actualEventId || undefined,
       amountVariance: Number(match.amountVariance),
       timingVariance: match.timingVariance,
       confidenceScore: Number(match.confidenceScore),
