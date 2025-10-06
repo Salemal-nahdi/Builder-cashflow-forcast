@@ -119,7 +119,7 @@ export class ForecastEngine {
     while (currentDate <= this.endDate && (!forecastLine.endDate || currentDate <= forecastLine.endDate)) {
       // Apply inflation/escalation
       const monthsSinceStart = this.getMonthsDifference(forecastLine.startDate, currentDate)
-      const adjustedAmount = this.applyInflation(currentAmount, forecastLine.inflationRate, forecastLine.escalationRate, monthsSinceStart)
+      const adjustedAmount = this.applyInflation(currentAmount, monthsSinceStart, forecastLine.inflationRate, forecastLine.escalationRate)
 
       events.push({
         id: `${forecastLine.id}-${currentDate.getTime()}`,
@@ -362,7 +362,7 @@ export class ForecastEngine {
            (endDate.getMonth() - startDate.getMonth())
   }
 
-  private applyInflation(baseAmount: number, inflationRate?: number, escalationRate?: number, monthsSinceStart: number): number {
+  private applyInflation(baseAmount: number, monthsSinceStart: number, inflationRate?: number, escalationRate?: number): number {
     if (!inflationRate && !escalationRate) return baseAmount
 
     const annualRate = (inflationRate || 0) + (escalationRate || 0)
