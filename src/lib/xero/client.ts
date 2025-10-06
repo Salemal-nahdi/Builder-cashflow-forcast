@@ -1,4 +1,4 @@
-import { XeroApi, XeroClient } from 'xero-node'
+import { XeroClient } from 'xero-node'
 import { prisma } from '../prisma'
 
 export interface XeroConfig {
