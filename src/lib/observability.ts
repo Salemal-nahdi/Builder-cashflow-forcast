@@ -35,7 +35,7 @@ interface ErrorEntry extends LogEntry {
 }
 
 class Logger {
-  private logLevel: keyof LogLevel = 'info'
+  private logLevel: keyof LogLevel = 'INFO'
   private logs: LogEntry[] = []
   private maxLogs = 10000
 
@@ -108,7 +108,7 @@ class Logger {
   error(message: string, context?: Record<string, any>, error?: Error) {
     this.addLog({
       timestamp: new Date(),
-      level: 'error',
+      level: 'ERROR',
       message,
       context,
       error,
@@ -118,7 +118,7 @@ class Logger {
   warn(message: string, context?: Record<string, any>) {
     this.addLog({
       timestamp: new Date(),
-      level: 'warn',
+      level: 'WARN',
       message,
       context,
     })
@@ -127,7 +127,7 @@ class Logger {
   info(message: string, context?: Record<string, any>) {
     this.addLog({
       timestamp: new Date(),
-      level: 'info',
+      level: 'INFO',
       message,
       context,
     })
@@ -136,7 +136,7 @@ class Logger {
   debug(message: string, context?: Record<string, any>) {
     this.addLog({
       timestamp: new Date(),
-      level: 'debug',
+      level: 'DEBUG',
       message,
       context,
     })
@@ -340,7 +340,7 @@ class ErrorTracker {
   }) {
     const errorEntry: ErrorEntry = {
       timestamp: new Date(),
-      level: 'error',
+      level: 'ERROR',
       message: error.message,
       error,
       stack: error.stack,
