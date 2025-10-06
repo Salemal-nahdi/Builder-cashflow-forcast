@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           },
         })
         if (user) {
-          session.user.organizationId = user.organizationId
+          session.user.organizationId = user.organizationId || ''
           session.user.organization = user.organization
           session.user.roles = user.roleAssignments.map(ra => ra.role)
         }
