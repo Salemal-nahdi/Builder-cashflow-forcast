@@ -66,18 +66,25 @@ export default async function VariancePage({ searchParams }: VariancePageProps) 
     where: { id: organizationId },
   })
 
+  // Transform variance matches to convert Decimal to number
+  const transformedVarianceMatches = varianceMatches.map(match => ({
+    ...match,
+    amountVariance: Number(match.amountVariance),
+    confidenceScore: Number(match.confidenceScore),
+  }))
+
   // Calculate summary statistics
-  const totalMatches = varianceMatches.length
-  const highConfidenceMatches = varianceMatches.filter(m => Number(m.confidenceScore) >= 0.8).length
-  const mediumConfidenceMatches = varianceMatches.filter(m => Number(m.confidenceScore) >= 0.6 && Number(m.confidenceScore) < 0.8).length
-  const lowConfidenceMatches = varianceMatches.filter(m => Number(m.confidenceScore) < 0.6).length
+  const totalMatches = transformedVarianceMatches.length
+  const highConfidenceMatches = transformedVarianceMatches.filter(m => m.confidenceScore >= 0.8).length
+  const mediumConfidenceMatches = transformedVarianceMatches.filter(m => m.confidenceScore >= 0.6 && m.confidenceScore < 0.8).length
+  const lowConfidenceMatches = transformedVarianceMatches.filter(m => m.confidenceScore < 0.6).length
 
   const averageAmountVariance = totalMatches > 0 
-    ? varianceMatches.reduce((sum, m) => sum + Number(m.amountVariance), 0) / totalMatches 
+    ? transformedVarianceMatches.reduce((sum, m) => sum + m.amountVariance, 0) / totalMatches 
     : 0
 
   const averageTimingVariance = totalMatches > 0 
-    ? varianceMatches.reduce((sum, m) => sum + m.timingVariance, 0) / totalMatches 
+    ? transformedVarianceMatches.reduce((sum, m) => sum + m.timingVariance, 0) / totalMatches 
     : 0
 
   return (
@@ -162,7 +169,7 @@ export default async function VariancePage({ searchParams }: VariancePageProps) 
               )}
             </div>
           ) : (
-            <VarianceTable varianceMatches={varianceMatches} />
+            <VarianceTable varianceMatches={transformedVarianceMatches} />
           )}
         </div>
       </div>
