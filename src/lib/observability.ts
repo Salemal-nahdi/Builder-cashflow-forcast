@@ -70,16 +70,16 @@ class Logger {
       }
       
       switch (entry.level) {
-        case 'error':
+        case 'ERROR':
           console.error('🔴', JSON.stringify(logData, null, 2))
           break
-        case 'warn':
+        case 'WARN':
           console.warn('🟡', JSON.stringify(logData, null, 2))
           break
-        case 'info':
+        case 'INFO':
           console.info('🔵', JSON.stringify(logData, null, 2))
           break
-        case 'debug':
+        case 'DEBUG':
           console.debug('⚪', JSON.stringify(logData, null, 2))
           break
       }
