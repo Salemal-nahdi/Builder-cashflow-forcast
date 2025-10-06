@@ -75,7 +75,7 @@ export class SyncEngine {
 
       // Check if token needs refresh
       let accessToken = xeroConnection.accessToken
-      if (xeroConnection.expiresAt && new Date() >= xeroConnection.expiresAt) {
+      if (xeroConnection.tokenExpiresAt && new Date() >= xeroConnection.tokenExpiresAt) {
         const refreshResult = await refreshAccessToken(xeroConnection.refreshToken)
         accessToken = refreshResult.access_token
 
@@ -84,7 +84,7 @@ export class SyncEngine {
           data: {
             accessToken: refreshResult.access_token,
             refreshToken: refreshResult.refresh_token,
-            expiresAt: addDays(new Date(), 30), // Xero tokens typically last 30 minutes
+            tokenExpiresAt: addDays(new Date(), 30), // Xero tokens typically last 30 minutes
           }
         })
       }
