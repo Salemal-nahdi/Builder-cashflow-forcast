@@ -217,29 +217,44 @@ class MetricsCollector {
   private counters: Map<string, number> = new Map()
   private histograms: Map<string, number[]> = new Map()
 
-  increment(name: string, tags?: Record<string, string>) {
-    const key = this.getMetricKey(name, tags)
+  increment(name: string, tags?: Record<string, string | undefined>) {
+    // Filter out undefined values from tags
+    const cleanTags = tags ? Object.fromEntries(
+      Object.entries(tags).filter(([_, v]) => v !== undefined)
+    ) as Record<string, string> : undefined
+    
+    const key = this.getMetricKey(name, cleanTags)
     this.counters.set(key, (this.counters.get(key) || 0) + 1)
     
     this.addMetric({
       name,
       value: this.counters.get(key)!,
-      tags,
+      tags: cleanTags,
       timestamp: new Date(),
     })
   }
 
-  gauge(name: string, value: number, tags?: Record<string, string>) {
+  gauge(name: string, value: number, tags?: Record<string, string | undefined>) {
+    // Filter out undefined values from tags
+    const cleanTags = tags ? Object.fromEntries(
+      Object.entries(tags).filter(([_, v]) => v !== undefined)
+    ) as Record<string, string> : undefined
+    
     this.addMetric({
       name,
       value,
-      tags,
+      tags: cleanTags,
       timestamp: new Date(),
     })
   }
 
-  histogram(name: string, value: number, tags?: Record<string, string>) {
-    const key = this.getMetricKey(name, tags)
+  histogram(name: string, value: number, tags?: Record<string, string | undefined>) {
+    // Filter out undefined values from tags
+    const cleanTags = tags ? Object.fromEntries(
+      Object.entries(tags).filter(([_, v]) => v !== undefined)
+    ) as Record<string, string> : undefined
+    
+    const key = this.getMetricKey(name, cleanTags)
     
     if (!this.histograms.has(key)) {
       this.histograms.set(key, [])
@@ -250,7 +265,7 @@ class MetricsCollector {
     this.addMetric({
       name: `${name}.histogram`,
       value,
-      tags,
+      tags: cleanTags,
       timestamp: new Date(),
     })
   }
