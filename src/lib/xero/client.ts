@@ -12,6 +12,7 @@ export class XeroApiClient {
   private client: XeroClient
   private connectionId: string
   private organizationId: string
+  private tenantId: string = ''
 
   constructor(connectionId: string, organizationId: string) {
     this.connectionId = connectionId
@@ -55,6 +56,9 @@ export class XeroApiClient {
       refresh_token: connection.refreshToken,
       token_type: 'Bearer',
     })
+    
+    // Store tenant ID
+    this.tenantId = connection.xeroTenantId
   }
 
   private async refreshToken(connection: any): Promise<void> {
@@ -86,7 +90,7 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.getAccounts()
+      const response = await this.client.accountingApi.getAccounts(this.tenantId)
       return response.body.accounts || []
     } catch (error) {
       console.error('Error fetching accounts:', error)
@@ -98,7 +102,7 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.getTrackingCategories()
+      const response = await this.client.accountingApi.getTrackingCategories(this.tenantId)
       return response.body.trackingCategories || []
     } catch (error) {
       console.error('Error fetching tracking categories:', error)
@@ -110,7 +114,7 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.getContacts()
+      const response = await this.client.accountingApi.getContacts(this.tenantId)
       return response.body.contacts || []
     } catch (error) {
       console.error('Error fetching contacts:', error)
@@ -123,7 +127,7 @@ export class XeroApiClient {
     
     try {
       const response = await this.client.accountingApi.getInvoices(
-        undefined, // tenantId (already set)
+        this.tenantId,
         undefined, // ifModifiedSince
         undefined, // where
         undefined, // order
@@ -151,7 +155,7 @@ export class XeroApiClient {
     
     try {
       const response = await this.client.accountingApi.getBills(
-        undefined, // tenantId
+        this.tenantId,
         undefined, // ifModifiedSince
         undefined, // where
         undefined, // order
@@ -179,7 +183,7 @@ export class XeroApiClient {
     
     try {
       const response = await this.client.accountingApi.getPayments(
-        undefined, // tenantId
+        this.tenantId,
         undefined, // ifModifiedSince
         undefined, // where
         undefined, // order
@@ -204,7 +208,7 @@ export class XeroApiClient {
     
     try {
       const response = await this.client.accountingApi.getBankTransactions(
-        undefined, // tenantId
+        this.tenantId,
         undefined, // ifModifiedSince
         undefined, // where
         undefined, // order
@@ -229,7 +233,7 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.getItems()
+      const response = await this.client.accountingApi.getItems(this.tenantId)
       return response.body.items || []
     } catch (error) {
       console.error('Error fetching items:', error)
@@ -242,7 +246,7 @@ export class XeroApiClient {
     
     try {
       const response = await this.client.accountingApi.createInvoice(
-        undefined, // tenantId
+        this.tenantId,
         { invoices: [invoiceData] }
       )
       return response.body.invoices?.[0]
