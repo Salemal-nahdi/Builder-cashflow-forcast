@@ -265,7 +265,7 @@ export class ReconciliationEngine {
             organizationId: this.organizationId,
             cashEventId: match.cashEventId,
             actualEventId: match.actualEventId || null,
-            xeroTransactionId: match.xeroTransactionId || null,
+            ...(match.xeroTransactionId && { xeroTransactionId: match.xeroTransactionId }),
             ...(match.xeroTransactionType && { xeroTransactionType: match.xeroTransactionType }),
             amountVariance: match.amountVariance,
             timingVariance: match.timingVariance,
