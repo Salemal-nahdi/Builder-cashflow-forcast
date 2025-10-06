@@ -27,7 +27,7 @@ interface MetricEntry {
 }
 
 interface ErrorEntry extends LogEntry {
-  level: 'error'
+  level: 'ERROR'
   error: Error
   stack?: string
   component?: string
