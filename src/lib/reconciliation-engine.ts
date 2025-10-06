@@ -510,6 +510,8 @@ export class ReconciliationEngine {
         organizationId: this.organizationId,
         cashEventId: cashEvent.id,
         actualEventId: actualEvent.id,
+        xeroTransactionId: '',
+        xeroTransactionType: '',
         amountVariance,
         timingVariance,
         confidenceScore,
