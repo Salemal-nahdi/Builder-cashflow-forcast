@@ -228,7 +228,7 @@ export class XeroApiClient {
     await this.initialize()
     
     try {
-      const response = await this.client.accountingApi.createInvoice(
+      const response = await this.client.accountingApi.createInvoices(
         this.tenantId,
         { invoices: [invoiceData] }
       )
