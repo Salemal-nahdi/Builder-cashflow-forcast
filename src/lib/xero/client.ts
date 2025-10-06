@@ -59,7 +59,7 @@ export class XeroApiClient {
 
   private async refreshToken(connection: any): Promise<void> {
     try {
-      const tokenSet = await this.client.refreshAccessToken()
+      const tokenSet = await this.client.refreshToken()
       
       await prisma.xeroConnection.update({
         where: { id: this.connectionId },
