@@ -16,9 +16,29 @@ interface TrackingCategory {
   options: TrackingOption[]
 }
 
+interface XeroTrackingMap {
+  id: string
+  trackingOption: {
+    name: string
+  }
+}
+
+interface XeroContactMap {
+  contact: {
+    name: string
+  }
+}
+
+interface Project {
+  id: string
+  name: string
+  xeroTrackingMaps: XeroTrackingMap[]
+  xeroContactMap?: XeroContactMap | null
+}
+
 interface XeroSettingsClientProps {
   xeroConnection: any
-  projects: any[]
+  projects: Project[]
   trackingCategories: TrackingCategory[]
   contacts: any[]
   unmappedEvents: any[]
