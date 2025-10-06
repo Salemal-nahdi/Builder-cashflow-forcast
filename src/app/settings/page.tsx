@@ -46,6 +46,17 @@ export default async function SettingsPage() {
   const userRoles = session.user.roles || []
   const canManageSettings = userRoles.includes('management') || userRoles.includes('finance')
 
+  // Transform organization settings to convert Decimal to number
+  const transformedOrganization = {
+    ...organization,
+    settings: organization.settings ? {
+      ...organization.settings,
+      defaultRetentionPercentage: organization.settings.defaultRetentionPercentage 
+        ? Number(organization.settings.defaultRetentionPercentage) 
+        : null,
+    } : null,
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -95,7 +106,7 @@ export default async function SettingsPage() {
             {/* Organization Settings */}
             <div>
               <OrganizationSettings 
-                organization={organization}
+                organization={transformedOrganization}
               />
             </div>
 
