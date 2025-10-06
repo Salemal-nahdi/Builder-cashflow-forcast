@@ -66,15 +66,30 @@ export default async function VariancePage({ searchParams }: VariancePageProps) 
     where: { id: organizationId },
   })
 
-  // Transform variance matches to convert Decimal to number
+  // Transform variance matches to convert Decimal to number and match component interface
   const transformedVarianceMatches = varianceMatches.map(match => ({
     ...match,
     amountVariance: Number(match.amountVariance),
     confidenceScore: Number(match.confidenceScore),
     cashEvent: match.cashEvent ? {
-      ...match.cashEvent,
+      type: match.cashEvent.type,
       amount: Number(match.cashEvent.amount),
-    } : null,
+      scheduledDate: match.cashEvent.scheduledDate,
+      actualDate: match.cashEvent.actualDate,
+      sourceType: match.cashEvent.sourceType,
+      sourceId: match.cashEvent.sourceId,
+      project: match.cashEvent.project ? {
+        name: match.cashEvent.project.name,
+      } : null,
+    } : {
+      type: '',
+      amount: 0,
+      scheduledDate: new Date(),
+      actualDate: null,
+      sourceType: '',
+      sourceId: '',
+      project: null,
+    },
   }))
 
   // Calculate summary statistics
