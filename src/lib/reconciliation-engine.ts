@@ -264,14 +264,14 @@ export class ReconciliationEngine {
           data: {
             organizationId: this.organizationId,
             cashEventId: match.cashEventId,
-            actualEventId: match.actualEventId,
-            xeroTransactionId: match.xeroTransactionId,
-            xeroTransactionType: match.xeroTransactionType,
+            actualEventId: match.actualEventId || undefined,
+            xeroTransactionId: match.xeroTransactionId || undefined,
+            xeroTransactionType: match.xeroTransactionType || undefined,
             amountVariance: match.amountVariance,
             timingVariance: match.timingVariance,
             confidenceScore: match.confidenceScore,
             status: match.status,
-            projectId: match.projectId,
+            projectId: match.projectId || undefined,
           },
         })
       }
