@@ -124,11 +124,13 @@ export class SyncEngine {
   }
 
   private async syncInvoices(tenantId: string, accessToken: string, lastSync?: Date): Promise<SyncResult> {
-    const modifiedSince = lastSync?.toISOString()
-    const invoices = await getInvoices(accessToken, tenantId, { modifiedSince })
+    // NOTE: This legacy sync-engine.ts is deprecated. Use XeroSyncService from xero/sync.ts instead.
+    // const modifiedSince = lastSync?.toISOString()
+    // const invoices = await getInvoices(accessToken, tenantId, { modifiedSince })
     
     let recordsUpdated = 0
     const errors: string[] = []
+    const invoices: any[] = [] // Deprecated - use XeroSyncService
 
     for (const invoice of invoices) {
       try {
@@ -170,8 +172,8 @@ export class SyncEngine {
   }
 
   private async syncBills(tenantId: string, accessToken: string, lastSync?: Date): Promise<SyncResult> {
-    const modifiedSince = lastSync?.toISOString()
-    const bills = await getBills(accessToken, tenantId, { modifiedSince })
+    // NOTE: This legacy sync-engine.ts is deprecated. Use XeroSyncService from xero/sync.ts instead.
+    const bills: any[] = [] // Deprecated
     
     let recordsUpdated = 0
     const errors: string[] = []
@@ -216,8 +218,8 @@ export class SyncEngine {
   }
 
   private async syncPayments(tenantId: string, accessToken: string, lastSync?: Date): Promise<SyncResult> {
-    const modifiedSince = lastSync?.toISOString()
-    const payments = await getPayments(accessToken, tenantId, { modifiedSince })
+    // NOTE: This legacy sync-engine.ts is deprecated. Use XeroSyncService from xero/sync.ts instead.
+    const payments: any[] = [] // Deprecated
     
     let recordsUpdated = 0
     const errors: string[] = []
@@ -262,7 +264,8 @@ export class SyncEngine {
   }
 
   private async syncProjects(tenantId: string, accessToken: string, lastSync?: Date): Promise<SyncResult> {
-    const projects = await getProjects(accessToken, tenantId)
+    // NOTE: This legacy sync-engine.ts is deprecated. Use XeroSyncService from xero/sync.ts instead.
+    const projects: any[] = [] // Deprecated
     
     let recordsUpdated = 0
     const errors: string[] = []
