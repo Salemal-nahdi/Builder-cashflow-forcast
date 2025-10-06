@@ -279,7 +279,7 @@ export class NotificationEngine {
 
     // Send to management and finance users
     for (const user of organization.users) {
-      await this.sendEmailNotification(notification, null, user.email)
+      await this.sendEmailNotification(notification, undefined, user.email)
     }
   }
 
