@@ -134,9 +134,10 @@ export class SyncEngine {
 
     for (const invoice of invoices) {
       try {
+        // Deprecated: This logic is non-functional
         await prisma.cashEvent.upsert({
           where: {
-            xeroId: invoice.InvoiceID,
+            id: invoice.InvoiceID || 'deprecated',
           },
           update: {
             amount: parseFloat(invoice.Total || '0'),
@@ -180,9 +181,10 @@ export class SyncEngine {
 
     for (const bill of bills) {
       try {
+        // Deprecated: This logic is non-functional
         await prisma.cashEvent.upsert({
           where: {
-            xeroId: bill.BillID,
+            id: bill.BillID || 'deprecated',
           },
           update: {
             amount: parseFloat(bill.Total || '0'),
@@ -226,9 +228,10 @@ export class SyncEngine {
 
     for (const payment of payments) {
       try {
+        // Deprecated: This logic is non-functional
         await prisma.cashEvent.upsert({
           where: {
-            xeroId: payment.PaymentID,
+            id: payment.PaymentID || 'deprecated',
           },
           update: {
             amount: parseFloat(payment.Amount || '0'),
