@@ -48,7 +48,7 @@ class Logger {
   }
 
   private shouldLog(level: keyof LogLevel): boolean {
-    const levels = { error: 0, warn: 1, info: 2, debug: 3 }
+    const levels = { ERROR: 0, WARN: 1, INFO: 2, DEBUG: 3 }
     return levels[level] <= levels[this.logLevel]
   }
 
