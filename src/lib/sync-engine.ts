@@ -39,7 +39,7 @@ export class SyncEngine {
       await this.createSyncJob({
         id: `${organizationId}-${type}-${Date.now()}`,
         organizationId,
-        tenantId: xeroConnection.tenantId,
+        tenantId: xeroConnection.xeroTenantId,
         type,
         status: 'pending',
         retryCount: 0,
