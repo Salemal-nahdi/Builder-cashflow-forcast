@@ -511,7 +511,7 @@ class RateLimitMonitor {
   getRateStats(): Record<string, { current: number; limit: number; remaining: number }> {
     const stats: Record<string, { current: number; limit: number; remaining: number }> = {}
     
-    for (const [key, data] of this.requests.entries()) {
+    for (const [key, data] of Array.from(this.requests.entries())) {
       const [endpoint] = key.split(':')
       
       const limits: Record<string, number> = {
