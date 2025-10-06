@@ -296,7 +296,7 @@ export class PaymentOptimizer {
     }
 
     // Process each day
-    for (const [dateKey, dayEvents] of eventsByDay) {
+    for (const [dateKey, dayEvents] of Array.from(eventsByDay)) {
       const date = new Date(dateKey)
       const income = dayEvents
         .filter(e => e.type === 'income')
