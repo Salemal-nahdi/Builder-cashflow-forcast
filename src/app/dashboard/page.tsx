@@ -7,7 +7,7 @@ import { ForecastEngine } from '@/lib/forecast-engine'
 import { PaymentOptimizer } from '@/lib/payment-optimizer'
 import { addMonths, format } from 'date-fns'
 import { DashboardClient } from '@/components/dashboard-client'
-import { SimpleCashflowChart } from '@/components/simple-cashflow-chart'
+import { DashboardForecastSection } from '@/components/dashboard-forecast-section'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -142,7 +142,7 @@ export default async function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Lowest Balance</p>
-                <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.lowestBalance).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.lowestBalance).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
               </div>
             </div>
           </div>
@@ -166,20 +166,12 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Cashflow Chart */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">6-Month Cashflow Forecast</h2>
-          <SimpleCashflowChart 
-            periods={forecastPeriods.map(p => ({
-              date: p.startDate,
-              income: Number(p.income),
-              expenses: Number(p.outgo),
-              netFlow: Number(p.net),
-              balance: Number(p.balance)
-            }))}
-            startingBalance={0}
-          />
-        </div>
+        {/* Cashflow Chart with View Controls */}
+        <DashboardForecastSection 
+          forecastPeriods={forecastPeriods}
+          projects={organization.projects}
+          startingBalance={0}
+        />
 
         {/* Payment Optimizer Suggestions */}
         {suggestions.length > 0 && (
