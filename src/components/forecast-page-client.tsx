@@ -21,6 +21,7 @@ export function ForecastPageClient({
 }: ForecastPageClientProps) {
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly')
   const [chartType, setChartType] = useState<'bar' | 'line' | 'area' | 'table' | 'gantt' | 'by-project'>('bar')
+  const [basis, setBasis] = useState<'cash' | 'accrual'>('accrual')
 
   // Transform periods for chart
   const chartPeriods = forecastPeriods.map(p => ({
@@ -43,7 +44,16 @@ export function ForecastPageClient({
   return (
     <div>
       {/* View Controls */}
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">Basis:</span>
+          <button
+            onClick={() => setBasis(basis === 'cash' ? 'accrual' : 'cash')}
+            className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            {basis === 'cash' ? 'Cash' : 'Accrual'}
+          </button>
+        </div>
         <ForecastViewControls
           viewMode={viewMode}
           chartType={chartType}

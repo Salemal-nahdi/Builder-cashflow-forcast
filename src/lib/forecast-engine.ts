@@ -30,12 +30,14 @@ export class ForecastEngine {
   private scenarioId?: string
   private startDate: Date
   private endDate: Date
+  private basis: 'cash' | 'accrual'
 
-  constructor(organizationId: string, startDate: Date, endDate: Date, scenarioId?: string) {
+  constructor(organizationId: string, startDate: Date, endDate: Date, scenarioId?: string, basis: 'cash' | 'accrual' = 'accrual') {
     this.organizationId = organizationId
     this.scenarioId = scenarioId
     this.startDate = startDate
     this.endDate = endDate
+    this.basis = basis
   }
 
   async generateForecast(periodType: 'monthly' | 'weekly' = 'monthly'): Promise<ForecastPeriod[]> {

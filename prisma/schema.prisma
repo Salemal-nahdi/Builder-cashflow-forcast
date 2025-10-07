@@ -452,6 +452,9 @@ model OrganizationSettings {
   defaultRetentionReleaseDays Int?
   defaultForecastMonths      Int?     @default(24)
   
+  // Accounting basis
+  defaultAccountingBasis String? @default("accrual") // cash, accrual
+  
   // Notifications
   digestFrequency String?  @default("weekly") // daily, weekly, monthly
   digestDay       Int?     @default(1) // 1 = Monday

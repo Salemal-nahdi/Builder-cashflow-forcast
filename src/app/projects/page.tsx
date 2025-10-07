@@ -55,6 +55,11 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           where: { status: { in: ['pending', 'invoiced'] } },
           orderBy: { expectedDate: 'asc' },
         },
+        xeroTrackingMaps: {
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: {
             milestones: true,

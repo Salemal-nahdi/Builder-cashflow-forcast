@@ -21,6 +21,7 @@ export function DashboardForecastSection({
 }: DashboardForecastSectionProps) {
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly')
   const [chartType, setChartType] = useState<'bar' | 'line' | 'area' | 'table' | 'gantt' | 'by-project'>('bar')
+  const [basis, setBasis] = useState<'cash' | 'accrual'>('accrual')
 
   // Transform periods for chart
   const chartPeriods = forecastPeriods.map(p => ({
@@ -44,13 +45,25 @@ export function DashboardForecastSection({
     <div className="bg-white p-6 rounded-lg shadow mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900">6-Month Cashflow Forecast</h2>
-        <div className="scale-90 origin-right">
-          <ForecastViewControls
-            viewMode={viewMode}
-            chartType={chartType}
-            onViewModeChange={setViewMode}
-            onChartTypeChange={setChartType}
-          />
+        <div className="flex items-center gap-4">
+          {/* Basis Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Basis:</span>
+            <button
+              onClick={() => setBasis(basis === 'cash' ? 'accrual' : 'cash')}
+              className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              {basis === 'cash' ? 'Cash' : 'Accrual'}
+            </button>
+          </div>
+          <div className="scale-90 origin-right">
+            <ForecastViewControls
+              viewMode={viewMode}
+              chartType={chartType}
+              onViewModeChange={setViewMode}
+              onChartTypeChange={setChartType}
+            />
+          </div>
         </div>
       </div>
 

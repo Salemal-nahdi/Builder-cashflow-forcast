@@ -13,6 +13,7 @@ interface Organization {
     defaultRetentionPercentage: number | null
     defaultRetentionReleaseDays: number | null
     defaultForecastMonths: number | null
+    defaultAccountingBasis: string | null
     digestFrequency: string | null
     digestDay: number | null
   } | null
@@ -31,6 +32,7 @@ export function OrganizationSettings({ organization }: OrganizationSettingsProps
     defaultRetentionPercentage: organization.settings?.defaultRetentionPercentage || 5.0,
     defaultRetentionReleaseDays: organization.settings?.defaultRetentionReleaseDays || 84,
     defaultForecastMonths: organization.settings?.defaultForecastMonths || 24,
+    defaultAccountingBasis: organization.settings?.defaultAccountingBasis || 'accrual',
     digestFrequency: organization.settings?.digestFrequency || 'weekly',
     digestDay: organization.settings?.digestDay || 1,
   })
@@ -203,6 +205,25 @@ export function OrganizationSettings({ organization }: OrganizationSettingsProps
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+        </div>
+
+        {/* Accounting Basis */}
+        <div>
+          <label htmlFor="defaultAccountingBasis" className="block text-sm font-medium text-gray-700 mb-1">
+            Default Accounting Basis
+          </label>
+          <select
+            id="defaultAccountingBasis"
+            value={formData.defaultAccountingBasis}
+            onChange={(e) => handleInputChange('defaultAccountingBasis', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="accrual">Accrual Basis</option>
+            <option value="cash">Cash Basis</option>
+          </select>
+          <p className="mt-1 text-sm text-gray-500">
+            Choose how you want to view financial reports. Accrual shows income/expenses when invoiced, Cash shows when payment is received/made.
+          </p>
         </div>
 
         {/* Digest Settings */}
