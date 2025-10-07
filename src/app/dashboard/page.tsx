@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { ForecastEngine } from '@/lib/forecast-engine'
 import { PaymentOptimizer } from '@/lib/payment-optimizer'
 import { addMonths, format } from 'date-fns'
+import { DashboardClient } from '@/components/dashboard-client'
+import { SimpleCashflowChart } from '@/components/simple-cashflow-chart'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -72,44 +74,12 @@ export default async function DashboardPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {organization.name}
-              </h1>
-              <p className="text-gray-600">Cashflow Dashboard</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              {xeroConnection ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">
-                    Connected to {xeroConnection.xeroOrgName}
-                  </span>
-                </div>
-              ) : (
-                <Link
-                  href="/settings/xero"
-                  className="text-sm text-blue-600 hover:text-blue-500"
-                >
-                  Connect Xero
-                </Link>
-              )}
-              <Link
-                href="/auth/signout"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <DashboardClient
+      organization={organization}
+      xeroConnection={xeroConnection}
+      projects={organization.projects}
+      cashflowSummary={cashflowSummary}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Cash Position Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
@@ -199,14 +169,16 @@ export default async function DashboardPage() {
         {/* Cashflow Chart */}
         <div className="bg-white p-6 rounded-lg shadow mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">6-Month Cashflow Forecast</h2>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p className="mt-2 text-sm text-gray-500">Chart visualization will be implemented</p>
-            </div>
-          </div>
+          <SimpleCashflowChart 
+            periods={forecastPeriods.map(p => ({
+              date: p.date,
+              income: Number(p.income),
+              expenses: Number(p.expenses),
+              netFlow: Number(p.netFlow),
+              balance: Number(p.closingBalance)
+            }))}
+            startingBalance={Number(cashflowSummary.currentBalance)}
+          />
         </div>
 
         {/* Payment Optimizer Suggestions */}
@@ -347,6 +319,6 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </DashboardClient>
   )
 }
