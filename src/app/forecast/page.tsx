@@ -2,9 +2,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ForecastChart } from '@/components/forecast-chart'
-import { ForecastSummary } from '@/components/forecast-summary'
-import { ScenarioSelector } from '@/components/scenario-selector'
+import { prisma } from '@/lib/prisma'
+import { ForecastEngine } from '@/lib/forecast-engine'
+import { addMonths } from 'date-fns'
+import { ForecastPageClient } from '@/components/forecast-page-client'
 
 export default async function ForecastPage() {
   const session = await getServerSession(authOptions)
@@ -15,6 +16,34 @@ export default async function ForecastPage() {
 
   const organizationId = session.user.organizationId
 
+  // Get organization data
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+  })
+
+  // Generate forecast data
+  const startDate = new Date()
+  const endDate = addMonths(startDate, 6)
+  const forecastEngine = new ForecastEngine(organizationId, startDate, endDate)
+  const forecastPeriods = await forecastEngine.generateForecast('monthly')
+  const cashflowSummary = await forecastEngine.getCashflowSummary()
+
+  // Get all projects for gantt/by-project views
+  const projects = await prisma.project.findMany({
+    where: { organizationId },
+    include: {
+      milestones: {
+        where: { status: { in: ['pending', 'invoiced'] } },
+        orderBy: { expectedDate: 'asc' },
+      },
+      supplierClaims: {
+        where: { status: { in: ['pending', 'invoiced'] } },
+        orderBy: { expectedDate: 'asc' },
+      },
+    },
+    orderBy: { name: 'asc' },
+  })
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -23,15 +52,20 @@ export default async function ForecastPage() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Cashflow Forecast</h1>
-              <p className="text-gray-600">Projected cash movements and balance</p>
+              <p className="text-gray-600">{organization?.name} - Interactive Views</p>
             </div>
             <div className="flex items-center space-x-4">
-              <ScenarioSelector organizationId={organizationId} />
               <Link
                 href="/dashboard"
                 className="text-gray-600 hover:text-gray-900"
               >
                 Dashboard
+              </Link>
+              <Link
+                href="/projects"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Projects
               </Link>
             </div>
           </div>
@@ -40,13 +74,34 @@ export default async function ForecastPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
-        <div className="mb-8">
-          <ForecastSummary organizationId={organizationId} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <p className="text-sm font-medium text-gray-600">Current Balance</p>
+            <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.currentBalance).toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <p className="text-sm font-medium text-gray-600">6-Month Income</p>
+            <p className="text-2xl font-bold text-green-600">${Number(cashflowSummary.totalIncome).toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <p className="text-sm font-medium text-gray-600">6-Month Outgo</p>
+            <p className="text-2xl font-bold text-red-600">${Number(cashflowSummary.totalOutgo).toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <p className="text-sm font-medium text-gray-600">Projected Balance</p>
+            <p className={`text-2xl font-bold ${Number(cashflowSummary.projectedBalance) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              ${Number(cashflowSummary.projectedBalance).toLocaleString()}
+            </p>
+          </div>
         </div>
 
-        {/* Forecast Chart */}
+        {/* Interactive Forecast Views */}
         <div className="mb-8">
-          <ForecastChart organizationId={organizationId} />
+          <ForecastPageClient 
+            forecastPeriods={forecastPeriods}
+            projects={projects}
+            startingBalance={Number(cashflowSummary.currentBalance)}
+          />
         </div>
 
         {/* Quick Actions */}
