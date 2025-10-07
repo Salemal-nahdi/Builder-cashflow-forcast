@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
+import { useRouter } from 'next/navigation'
 
 interface RealForecastByProjectProps {
   forecastPeriods: any[]
@@ -12,7 +13,11 @@ export function RealForecastByProject({
   forecastPeriods,
   projects 
 }: RealForecastByProjectProps) {
+  const router = useRouter()
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [editingMilestone, setEditingMilestone] = useState<string | null>(null)
+  const [editingClaim, setEditingClaim] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects(prev => {
@@ -24,6 +29,74 @@ export function RealForecastByProject({
       }
       return next
     })
+  }
+
+  const updateMilestone = async (milestoneId: string, data: { expectedDate?: string, amount?: number }) => {
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/milestones/${milestoneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (response.ok) {
+        router.refresh()
+        setEditingMilestone(null)
+      } else {
+        alert('Failed to update milestone')
+      }
+    } catch (error) {
+      console.error('Error updating milestone:', error)
+      alert('Failed to update milestone')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateSupplierClaim = async (claimId: string, data: { expectedDate?: string, amount?: number, supplierName?: string }) => {
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/supplier-claims/${claimId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      
+      if (response.ok) {
+        router.refresh()
+        setEditingClaim(null)
+      } else {
+        alert('Failed to update cost')
+      }
+    } catch (error) {
+      console.error('Error updating cost:', error)
+      alert('Failed to update cost')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteClaim = async (claimId: string) => {
+    if (!confirm('Are you sure you want to delete this cost?')) return
+    
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/supplier-claims/${claimId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        router.refresh()
+      } else {
+        alert('Failed to delete cost')
+      }
+    } catch (error) {
+      console.error('Error deleting cost:', error)
+      alert('Failed to delete cost')
+    } finally {
+      setSaving(false)
+    }
   }
 
   // Calculate project data for each period
@@ -214,26 +287,185 @@ export function RealForecastByProject({
                 </td>
               </tr>
 
-              {/* Expanded Details */}
+              {/* Expanded Edit Details */}
               {expandedProjects.has(project.id) && (
                 <tr>
-                  <td colSpan={forecastPeriods.length + 2} className="px-6 py-4 bg-gray-50">
-                    <div className="text-sm space-y-2">
-                      <div className="font-medium text-gray-900">Project Details:</div>
-                      <div className="grid grid-cols-2 gap-4">
+                  <td colSpan={forecastPeriods.length + 2} className="px-6 py-6 bg-gray-50 border-t border-gray-200">
+                    <div className="space-y-6">
+                      {/* Summary Stats */}
+                      <div className="grid grid-cols-3 gap-4 pb-4 border-b border-gray-300">
                         <div>
-                          <span className="text-gray-600">Contract Value:</span>
-                          <span className="ml-2 font-medium">${Number(project.contractValue || 0).toLocaleString()}</span>
+                          <span className="text-xs text-gray-600">Contract Value:</span>
+                          <div className="text-sm font-medium">${Number(project.contractValue || 0).toLocaleString()}</div>
                         </div>
                         <div>
-                          <span className="text-gray-600">Status:</span>
-                          <span className="ml-2 font-medium capitalize">{project.status}</span>
+                          <span className="text-xs text-gray-600">Status:</span>
+                          <div className="text-sm font-medium capitalize">{project.status}</div>
                         </div>
                         <div>
-                          <span className="text-gray-600">Margin %:</span>
-                          <span className="ml-2 font-medium">
+                          <span className="text-xs text-gray-600">Margin %:</span>
+                          <div className="text-sm font-medium">
                             {totalIncome > 0 ? ((netMargin / totalIncome) * 100).toFixed(1) : 0}%
-                          </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Income/Milestones Section */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Income Milestones</h4>
+                        <div className="space-y-2">
+                          {project.milestones?.map((milestone: any) => (
+                            <div key={milestone.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                              {editingMilestone === milestone.id ? (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    defaultValue={milestone.name}
+                                    disabled
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-gray-50"
+                                  />
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs text-gray-600">Date</label>
+                                      <input
+                                        type="date"
+                                        defaultValue={format(new Date(milestone.expectedDate), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            updateMilestone(milestone.id, { expectedDate: e.target.value })
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-600">Amount</label>
+                                      <input
+                                        type="number"
+                                        defaultValue={Number(milestone.amount)}
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            updateMilestone(milestone.id, { amount: parseFloat(e.target.value) })
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => setEditingMilestone(null)}
+                                    className="text-xs text-gray-600 hover:text-gray-800"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">{milestone.name}</div>
+                                    <div className="text-xs text-gray-600">
+                                      {format(new Date(milestone.expectedDate), 'MMM dd, yyyy')} • ${Number(milestone.amount || 0).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => setEditingMilestone(milestone.id)}
+                                    disabled={saving}
+                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Costs Section */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Associated Costs</h4>
+                        <div className="space-y-2">
+                          {project.supplierClaims?.map((claim: any) => (
+                            <div key={claim.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                              {editingClaim === claim.id ? (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    defaultValue={claim.supplierName || claim.description}
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        updateSupplierClaim(claim.id, { supplierName: e.target.value })
+                                      }
+                                    }}
+                                    placeholder="Description"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                  />
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-xs text-gray-600">Date</label>
+                                      <input
+                                        type="date"
+                                        defaultValue={format(new Date(claim.expectedDate), 'yyyy-MM-dd')}
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            updateSupplierClaim(claim.id, { expectedDate: e.target.value })
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-gray-600">Amount</label>
+                                      <input
+                                        type="number"
+                                        defaultValue={Number(claim.amount)}
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            updateSupplierClaim(claim.id, { amount: parseFloat(e.target.value) })
+                                          }
+                                        }}
+                                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => setEditingClaim(null)}
+                                      className="text-xs text-gray-600 hover:text-gray-800"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => deleteClaim(claim.id)}
+                                      disabled={saving}
+                                      className="text-xs text-red-600 hover:text-red-800"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">{claim.supplierName || claim.description}</div>
+                                    <div className="text-xs text-gray-600">
+                                      {format(new Date(claim.expectedDate), 'MMM dd, yyyy')} • ${Number(claim.amount || 0).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => setEditingClaim(claim.id)}
+                                    disabled={saving}
+                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {(!project.supplierClaims || project.supplierClaims.length === 0) && (
+                            <div className="text-sm text-gray-500 italic">No costs added yet</div>
+                          )}
                         </div>
                       </div>
                     </div>
