@@ -30,10 +30,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const [contractValue, setContractValue] = useState('')
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [milestones, setMilestones] = useState<Milestone[]>([
-    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [] },
-    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [] },
-    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [] },
-    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [] }
+    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] }
   ])
 
   // Auto-calculate amounts when contract value or percentages change
@@ -80,7 +80,7 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
       percentage: 0, 
       amount: 0, 
       date: format(new Date(), 'yyyy-MM-dd'),
-      costs: []
+      costs: [{ description: '', amount: 0, daysAfter: 0 }] // Start with one cost
     }])
   }
 
@@ -139,10 +139,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
         setContractValue('')
         setStartDate(format(new Date(), 'yyyy-MM-dd'))
         setMilestones([
-          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [] },
-          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [] },
-          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [] },
-          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [] }
+          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
+          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] }
         ])
       } else {
         const error = await response.json()
@@ -313,20 +313,18 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                   </div>
 
                   {/* Costs Section */}
-                  {milestone.costs.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-300">
-                      <h4 className="text-xs font-medium text-gray-700 mb-2">Associated Costs</h4>
-                      <div className="space-y-2">
-                        {milestone.costs.map((cost, costIndex) => (
+                  <div className="mt-4 pt-4 border-t border-gray-300">
+                    <h4 className="text-xs font-medium text-gray-700 mb-2">Associated Costs</h4>
+                    <div className="space-y-2">
+                      {milestone.costs.map((cost, costIndex) => (
                           <div key={costIndex} className="grid grid-cols-12 gap-2 items-start">
                             <div className="col-span-5">
                               <input
                                 type="text"
-                                required
                                 value={cost.description}
                                 onChange={(e) => updateCost(index, costIndex, 'description', e.target.value)}
                                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Cost description"
+                                placeholder="e.g., Materials, Labor"
                               />
                             </div>
                             <div className="col-span-3">
@@ -334,23 +332,22 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                                 <span className="absolute left-2 top-1.5 text-xs text-gray-500">$</span>
                                 <input
                                   type="number"
-                                  required
                                   min="0"
                                   step="0.01"
                                   value={cost.amount}
                                   onChange={(e) => updateCost(index, costIndex, 'amount', parseFloat(e.target.value) || 0)}
                                   className="w-full pl-6 pr-2 py-1.5 border border-gray-300 rounded text-xs"
+                                  placeholder="0"
                                 />
                               </div>
                             </div>
                             <div className="col-span-3">
                               <input
                                 type="number"
-                                required
                                 value={cost.daysAfter}
                                 onChange={(e) => updateCost(index, costIndex, 'daysAfter', parseInt(e.target.value) || 0)}
                                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Days after"
+                                placeholder="0 (days)"
                               />
                             </div>
                             <div className="col-span-1 flex items-center">
@@ -366,17 +363,16 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                             </div>
                           </div>
                         ))}
-                      </div>
                     </div>
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => addCost(index)}
-                    className="mt-3 w-full py-1.5 border border-dashed border-gray-300 rounded text-xs text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    + Add cost for this payment
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => addCost(index)}
+                      className="mt-2 w-full py-1.5 border border-dashed border-gray-300 rounded text-xs text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+                    >
+                      + Add another cost
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

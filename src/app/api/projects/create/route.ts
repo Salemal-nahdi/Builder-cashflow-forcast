@@ -74,40 +74,44 @@ export async function POST(request: NextRequest) {
               sourceId: 'temp',
             }]
             
-            // Add cost events if any
+            // Add cost events if any (filter out empty costs)
             if (milestone.costs && milestone.costs.length > 0) {
-              milestone.costs.forEach((cost: any) => {
-                const costDate = addDays(milestoneDate, cost.daysAfter || 0)
-                events.push({
-                  organizationId,
-                  type: 'outgo',
-                  amount: cost.amount,
-                  scheduledDate: costDate,
-                  sourceType: 'supplier_claim',
-                  sourceId: 'temp',
+              milestone.costs
+                .filter((cost: any) => cost.description && cost.amount > 0)
+                .forEach((cost: any) => {
+                  const costDate = addDays(milestoneDate, cost.daysAfter || 0)
+                  events.push({
+                    organizationId,
+                    type: 'outgo',
+                    amount: cost.amount,
+                    scheduledDate: costDate,
+                    sourceType: 'supplier_claim',
+                    sourceId: 'temp',
+                  })
                 })
-              })
             }
             
             return events
           })
         },
 
-        // Create supplier claims for costs
+        // Create supplier claims for costs (filter out empty costs)
         supplierClaims: {
           create: milestones.flatMap((milestone: any) => {
             if (!milestone.costs || milestone.costs.length === 0) return []
             
-            return milestone.costs.map((cost: any) => {
-              const costDate = addDays(new Date(milestone.date), cost.daysAfter || 0)
-              return {
-                supplierName: cost.description || 'Supplier',
-                description: `Cost for ${milestone.name}`,
-                amount: cost.amount,
-                status: 'pending' as const,
-                expectedDate: costDate,
-              }
-            })
+            return milestone.costs
+              .filter((cost: any) => cost.description && cost.amount > 0)
+              .map((cost: any) => {
+                const costDate = addDays(new Date(milestone.date), cost.daysAfter || 0)
+                return {
+                  supplierName: cost.description || 'Supplier',
+                  description: `Cost for ${milestone.name}`,
+                  amount: cost.amount,
+                  status: 'pending' as const,
+                  expectedDate: costDate,
+                }
+              })
           })
         },
       },
