@@ -171,13 +171,13 @@ export default async function DashboardPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">6-Month Cashflow Forecast</h2>
           <SimpleCashflowChart 
             periods={forecastPeriods.map(p => ({
-              date: p.date,
+              date: p.startDate,
               income: Number(p.income),
-              expenses: Number(p.expenses),
-              netFlow: Number(p.netFlow),
-              balance: Number(p.closingBalance)
+              expenses: Number(p.outgo),
+              netFlow: Number(p.net),
+              balance: Number(p.balance)
             }))}
-            startingBalance={Number(cashflowSummary.currentBalance)}
+            startingBalance={0}
           />
         </div>
 
