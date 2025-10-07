@@ -2,20 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { addDays, format } from 'date-fns'
 
 interface Milestone {
-  id: string
   name: string
   percentage: number
-  date: string
-  costs: Cost[]
-}
-
-interface Cost {
-  id: string
-  description: string
-  amount: number
-  paymentDaysOffset: number // days after milestone payment (negative = before)
+  daysFromStart: number
 }
 
 interface SimpleAddProjectModalProps {
@@ -28,87 +20,28 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [projectName, setProjectName] = useState('')
   const [contractValue, setContractValue] = useState('')
-  const [startDate, setStartDate] = useState('')
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [milestones, setMilestones] = useState<Milestone[]>([
-    {
-      id: '1',
-      name: 'Deposit',
-      percentage: 10,
-      date: '',
-      costs: []
-    }
+    { name: 'Deposit', percentage: 10, daysFromStart: 0 },
+    { name: 'Foundation', percentage: 20, daysFromStart: 30 },
+    { name: 'Framing', percentage: 30, daysFromStart: 60 },
+    { name: 'Final Payment', percentage: 40, daysFromStart: 90 }
   ])
 
   if (!isOpen) return null
 
+  const updateMilestone = (index: number, field: keyof Milestone, value: any) => {
+    const updated = [...milestones]
+    updated[index] = { ...updated[index], [field]: value }
+    setMilestones(updated)
+  }
+
   const addMilestone = () => {
-    const newId = (milestones.length + 1).toString()
-    setMilestones([
-      ...milestones,
-      {
-        id: newId,
-        name: '',
-        percentage: 0,
-        date: '',
-        costs: []
-      }
-    ])
+    setMilestones([...milestones, { name: '', percentage: 0, daysFromStart: 0 }])
   }
 
-  const updateMilestone = (id: string, field: keyof Milestone, value: any) => {
-    setMilestones(milestones.map(m => 
-      m.id === id ? { ...m, [field]: value } : m
-    ))
-  }
-
-  const removeMilestone = (id: string) => {
-    setMilestones(milestones.filter(m => m.id !== id))
-  }
-
-  const addCost = (milestoneId: string) => {
-    setMilestones(milestones.map(m => {
-      if (m.id === milestoneId) {
-        return {
-          ...m,
-          costs: [
-            ...m.costs,
-            {
-              id: Date.now().toString(),
-              description: '',
-              amount: 0,
-              paymentDaysOffset: 7
-            }
-          ]
-        }
-      }
-      return m
-    }))
-  }
-
-  const updateCost = (milestoneId: string, costId: string, field: keyof Cost, value: any) => {
-    setMilestones(milestones.map(m => {
-      if (m.id === milestoneId) {
-        return {
-          ...m,
-          costs: m.costs.map(c => 
-            c.id === costId ? { ...c, [field]: value } : c
-          )
-        }
-      }
-      return m
-    }))
-  }
-
-  const removeCost = (milestoneId: string, costId: string) => {
-    setMilestones(milestones.map(m => {
-      if (m.id === milestoneId) {
-        return {
-          ...m,
-          costs: m.costs.filter(c => c.id !== costId)
-        }
-      }
-      return m
-    }))
+  const removeMilestone = (index: number) => {
+    setMilestones(milestones.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +49,8 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
     setIsSubmitting(true)
 
     try {
+      const projectStartDate = new Date(startDate)
+      
       const response = await fetch('/api/projects/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,8 +61,7 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
           milestones: milestones.map(m => ({
             name: m.name,
             percentage: m.percentage,
-            date: m.date,
-            costs: m.costs
+            date: format(addDays(projectStartDate, m.daysFromStart), 'yyyy-MM-dd')
           }))
         })
       })
@@ -135,17 +69,16 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
       if (response.ok) {
         router.refresh()
         onClose()
-        // Reset form
+        // Reset
         setProjectName('')
         setContractValue('')
-        setStartDate('')
-        setMilestones([{
-          id: '1',
-          name: 'Deposit',
-          percentage: 10,
-          date: '',
-          costs: []
-        }])
+        setStartDate(format(new Date(), 'yyyy-MM-dd'))
+        setMilestones([
+          { name: 'Deposit', percentage: 10, daysFromStart: 0 },
+          { name: 'Foundation', percentage: 20, daysFromStart: 30 },
+          { name: 'Framing', percentage: 30, daysFromStart: 60 },
+          { name: 'Final Payment', percentage: 40, daysFromStart: 90 }
+        ])
       } else {
         const error = await response.json()
         alert(`Error: ${error.error || 'Failed to create project'}`)
@@ -161,9 +94,9 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const totalPercentage = milestones.reduce((sum, m) => sum + (m.percentage || 0), 0)
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full my-8">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Add New Project</h2>
             <button
@@ -230,39 +163,33 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
           {/* Milestones */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Progress Claims / Milestones
-              </h3>
-              <span className={`text-sm font-medium ${totalPercentage === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                Total: {totalPercentage}%
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Progress Payments</h3>
+                <p className="text-xs text-gray-500">Simple milestone-based payments</p>
+              </div>
+              <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                totalPercentage === 100 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-orange-100 text-orange-700'
+              }`}>
+                {totalPercentage}%
               </span>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {milestones.map((milestone, index) => (
-                <div key={milestone.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Milestone {index + 1}</span>
-                    {milestones.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeMilestone(milestone.id)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-3">
+                <div key={index} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex-1">
                     <input
                       type="text"
                       required
                       value={milestone.name}
-                      onChange={(e) => updateMilestone(milestone.id, 'name', e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Name (e.g., Foundation)"
+                      onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder="Payment name"
                     />
+                  </div>
+                  <div className="w-24">
                     <div className="relative">
                       <input
                         type="number"
@@ -270,75 +197,37 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                         min="0"
                         max="100"
                         value={milestone.percentage}
-                        onChange={(e) => updateMilestone(milestone.id, 'percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Percentage"
+                        onChange={(e) => updateMilestone(index, 'percentage', parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md text-sm"
                       />
-                      <span className="absolute right-3 top-2 text-gray-500">%</span>
+                      <span className="absolute right-3 top-2 text-sm text-gray-500">%</span>
                     </div>
-                    <input
-                      type="date"
-                      required
-                      value={milestone.date}
-                      onChange={(e) => updateMilestone(milestone.id, 'date', e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    />
                   </div>
-
-                  {/* Costs for this milestone */}
-                  {milestone.costs.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      <div className="text-xs font-medium text-gray-600 mb-2">Associated Costs:</div>
-                      {milestone.costs.map((cost) => (
-                        <div key={cost.id} className="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded border border-gray-200">
-                          <input
-                            type="text"
-                            value={cost.description}
-                            onChange={(e) => updateCost(milestone.id, cost.id, 'description', e.target.value)}
-                            className="col-span-5 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Description (e.g., Concrete)"
-                          />
-                          <div className="col-span-3 relative">
-                            <span className="absolute left-2 top-1 text-sm text-gray-500">$</span>
-                            <input
-                              type="number"
-                              value={cost.amount}
-                              onChange={(e) => updateCost(milestone.id, cost.id, 'amount', parseFloat(e.target.value) || 0)}
-                              className="w-full pl-6 pr-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Amount"
-                            />
-                          </div>
-                          <div className="col-span-3 relative">
-                            <input
-                              type="number"
-                              value={cost.paymentDaysOffset}
-                              onChange={(e) => updateCost(milestone.id, cost.id, 'paymentDaysOffset', parseInt(e.target.value) || 0)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Days"
-                            />
-                            <span className="absolute -bottom-4 left-0 text-xs text-gray-500">days after payment</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeCost(milestone.id, cost.id)}
-                            className="col-span-1 text-red-600 hover:text-red-800"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
+                  <div className="w-32">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        value={milestone.daysFromStart}
+                        onChange={(e) => updateMilestone(index, 'daysFromStart', parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        placeholder="Days"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">days from start</div>
                     </div>
+                  </div>
+                  {milestones.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeMilestone(index)}
+                      className="text-red-600 hover:text-red-800 p-1"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => addCost(milestone.id)}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    + Add cost for this milestone
-                  </button>
                 </div>
               ))}
             </div>
@@ -346,14 +235,31 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
             <button
               type="button"
               onClick={addMilestone}
-              className="mt-4 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+              className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
             >
-              + Add another milestone
+              + Add milestone
             </button>
           </div>
 
+          {/* Preview */}
+          {contractValue && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">Payment Schedule</h4>
+              <div className="space-y-1 text-sm">
+                {milestones.map((m, i) => (
+                  <div key={i} className="flex justify-between text-blue-700">
+                    <span>{m.name}</span>
+                    <span className="font-medium">
+                      ${((parseFloat(contractValue) * m.percentage) / 100).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
@@ -374,4 +280,3 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
     </div>
   )
 }
-

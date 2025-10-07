@@ -29,99 +29,54 @@ export async function POST(request: NextRequest) {
 
     const organizationId = session.user.organizationId
 
-    // Create project with milestones, supplier claims (costs), and cash events
+    // Create project with milestones and cash events
     const project = await prisma.project.create({
       data: {
         organizationId,
         name,
-        description: `Created via simple project builder`,
+        description: `Created: ${new Date().toLocaleDateString()}`,
         status: 'active',
         contractValue,
         startDate: new Date(startDate),
-        retentionPercentage: 5, // Default 5% retention
+        retentionPercentage: 0, // No retention by default (keep it simple)
         
         // Create milestones
         milestones: {
-          create: milestones.map((milestone: any, index: number) => {
+          create: milestones.map((milestone: any) => {
             const milestoneAmount = (contractValue * milestone.percentage) / 100
-            const retentionAmount = (milestoneAmount * 5) / 100 // 5% retention
             
             return {
               name: milestone.name,
-              description: `Progress claim ${index + 1}`,
+              description: `${milestone.percentage}% of contract`,
               status: 'pending',
               percentage: milestone.percentage,
               amount: milestoneAmount,
-              retentionAmount,
+              retentionAmount: 0,
               expectedDate: new Date(milestone.date),
               contractValue,
             }
           })
         },
 
-        // Create cash events for milestones (income)
+        // Create cash events (just income for now - keep it simple!)
         cashEvents: {
-          create: milestones.flatMap((milestone: any, milestoneIndex: number) => {
+          create: milestones.map((milestone: any) => {
             const milestoneAmount = (contractValue * milestone.percentage) / 100
-            const retentionAmount = (milestoneAmount * 5) / 100
-            const paymentAmount = milestoneAmount - retentionAmount
-            const milestoneDate = new Date(milestone.date)
-
-            const events: any[] = [
-              // Income event (progress claim payment)
-              {
-                organizationId,
-                type: 'income',
-                amount: paymentAmount,
-                scheduledDate: milestoneDate,
-                sourceType: 'milestone',
-                sourceId: `milestone-${milestoneIndex}`, // Will be updated after creation
-              }
-            ]
-
-            // Add cost events for this milestone
-            if (milestone.costs && milestone.costs.length > 0) {
-              milestone.costs.forEach((cost: any) => {
-                const costDate = addDays(milestoneDate, cost.paymentDaysOffset || 0)
-                events.push({
-                  organizationId,
-                  type: 'outgo',
-                  amount: cost.amount,
-                  scheduledDate: costDate,
-                  sourceType: 'supplier_claim',
-                  sourceId: `cost-${milestoneIndex}-${cost.id}`, // Will be updated after creation
-                })
-              })
-            }
-
-            return events
-          })
-        },
-
-        // Create supplier claims for costs
-        supplierClaims: {
-          create: milestones.flatMap((milestone: any) => {
-            if (!milestone.costs || milestone.costs.length === 0) return []
             
-            return milestone.costs.map((cost: any) => {
-              const milestoneDate = new Date(milestone.date)
-              const costDate = addDays(milestoneDate, cost.paymentDaysOffset || 0)
-              
-              return {
-                supplierName: cost.description || 'Supplier',
-                description: `Cost for ${milestone.name}`,
-                amount: cost.amount,
-                status: 'pending' as const,
-                expectedDate: costDate,
-              }
-            })
+            return {
+              organizationId,
+              type: 'income',
+              amount: milestoneAmount,
+              scheduledDate: new Date(milestone.date),
+              sourceType: 'milestone',
+              sourceId: 'temp', // Will be linked properly later
+            }
           })
         },
       },
       include: {
         milestones: true,
         cashEvents: true,
-        supplierClaims: true,
       }
     })
 
@@ -134,4 +89,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
