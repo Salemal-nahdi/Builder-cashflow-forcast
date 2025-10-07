@@ -276,7 +276,7 @@ export function ForecastByProjectView({
                               {data.incomeDetails.map((detail, idx) => (
                                 <div key={idx} className="flex justify-between space-x-4">
                                   <span>{detail.milestone}:</span>
-                                  <span className="font-medium">${detail.amount.toLocaleString()}</span>
+                                  <span className="font-medium">${(detail.amount || 0).toLocaleString()}</span>
                                 </div>
                               ))}
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
@@ -492,19 +492,19 @@ export function ForecastByProjectView({
                             <div className="space-y-1">
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Contract Value:</span>
-                                <span className="font-medium">${project.contractValue.toLocaleString()}</span>
+                                <span className="font-medium">${(project.contractValue || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Total Income:</span>
-                                <span className="font-medium text-green-600">${totalIncome.toLocaleString()}</span>
+                                <span className="font-medium text-green-600">${(totalIncome || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Total Costs:</span>
-                                <span className="font-medium text-red-600">${totalCosts.toLocaleString()}</span>
+                                <span className="font-medium text-red-600">${(totalCosts || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between border-t border-gray-300 pt-1">
                                 <span className="text-gray-900 font-semibold">Net Margin:</span>
-                                <span className="font-bold text-blue-700">${(totalIncome - totalCosts).toLocaleString()}</span>
+                                <span className="font-bold text-blue-700">${((totalIncome || 0) - (totalCosts || 0)).toLocaleString()}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Margin %:</span>
@@ -619,7 +619,7 @@ export function ForecastByProjectView({
                 </td>
               ))}
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-blue-700 bg-blue-200">
-                ${balances[balances.length - 1]?.toLocaleString()}
+                ${(balances[balances.length - 1] || 0).toLocaleString()}
               </td>
             </tr>
           </tbody>
