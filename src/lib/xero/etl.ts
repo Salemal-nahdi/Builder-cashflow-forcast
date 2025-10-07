@@ -210,29 +210,45 @@ export class XeroETLService {
       for (const lineItem of lineItems || []) {
         const projectId = await this.getProjectIdFromTracking(lineItem.tracking)
         
+        // Direct bank transactions (not linked to invoices/bills) appear in BOTH cash and accrual reports in Xero
+        // So we create actual events for BOTH bases
+        const baseEventData = {
+          organizationId: this.organizationId,
+          projectId,
+          type: transaction.type === 'RECEIVE' ? 'income' : 'outgo',
+          amount: lineItem.amount || 0,
+          occurredAt: transaction.date,
+          sourceType: 'bank_transaction',
+          sourceId: transaction.xeroId,
+          accountCode: lineItem.accountCode,
+          accountType: await this.getAccountTypeFromCode(lineItem.accountCode),
+          contactId: lineItem.contact?.contactID,
+          contactName: lineItem.contact?.name,
+          trackingOptionIds: this.extractTrackingOptionIds(lineItem.tracking),
+          description: lineItem.description || transaction.description,
+          reference: transaction.reference,
+        }
+        
+        // Create cash basis event
         await prisma.actualEvent.create({
           data: {
-            organizationId: this.organizationId,
-            projectId,
+            ...baseEventData,
             basis: 'cash',
-            type: transaction.type === 'RECEIVE' ? 'income' : 'outgo',
-            amount: lineItem.amount || 0,
-            occurredAt: transaction.date,
-            sourceType: 'bank_transaction',
-            sourceId: transaction.xeroId,
-            accountCode: lineItem.accountCode,
-            accountType: await this.getAccountTypeFromCode(lineItem.accountCode),
-            contactId: lineItem.contact?.contactID,
-            contactName: lineItem.contact?.name,
-            trackingOptionIds: this.extractTrackingOptionIds(lineItem.tracking),
-            description: lineItem.description || transaction.description,
-            reference: transaction.reference,
+          },
+        })
+        
+        // Create accrual basis event (same data, just different basis)
+        // This matches Xero's behavior where direct bank transactions appear in both reports
+        await prisma.actualEvent.create({
+          data: {
+            ...baseEventData,
+            basis: 'accrual',
           },
         })
       }
     }
 
-    console.log(`Transformed ${transactions.length} bank transactions to cash actual events`)
+    console.log(`Transformed ${transactions.length} bank transactions to both cash and accrual actual events`)
   }
 
   private async getProjectIdFromTracking(tracking: any): Promise<string | null> {
