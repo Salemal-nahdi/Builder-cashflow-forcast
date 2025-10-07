@@ -79,12 +79,11 @@ export async function POST(request: NextRequest) {
               milestone.costs
                 .filter((cost: any) => cost.description && cost.amount > 0)
                 .forEach((cost: any) => {
-                  const costDate = addDays(milestoneDate, cost.daysAfter || 0)
                   events.push({
                     organizationId,
                     type: 'outgo',
                     amount: cost.amount,
-                    scheduledDate: costDate,
+                    scheduledDate: new Date(cost.date),
                     sourceType: 'supplier_claim',
                     sourceId: 'temp',
                   })
@@ -103,13 +102,12 @@ export async function POST(request: NextRequest) {
             return milestone.costs
               .filter((cost: any) => cost.description && cost.amount > 0)
               .map((cost: any) => {
-                const costDate = addDays(new Date(milestone.date), cost.daysAfter || 0)
                 return {
                   supplierName: cost.description || 'Supplier',
                   description: `Cost for ${milestone.name}`,
                   amount: cost.amount,
                   status: 'pending' as const,
-                  expectedDate: costDate,
+                  expectedDate: new Date(cost.date),
                 }
               })
           })

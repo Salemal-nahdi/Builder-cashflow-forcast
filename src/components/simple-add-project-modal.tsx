@@ -7,7 +7,7 @@ import { addDays, format } from 'date-fns'
 interface Cost {
   description: string
   amount: number
-  daysAfter: number // Days after milestone payment
+  date: string // Actual date of cost
 }
 
 interface Milestone {
@@ -30,10 +30,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const [contractValue, setContractValue] = useState('')
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [milestones, setMilestones] = useState<Milestone[]>([
-    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] }
+    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(new Date(), 'yyyy-MM-dd') }] },
+    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') }] },
+    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') }] },
+    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }] }
   ])
 
   // Auto-calculate amounts when contract value or percentages change
@@ -80,7 +80,7 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
       percentage: 0, 
       amount: 0, 
       date: format(new Date(), 'yyyy-MM-dd'),
-      costs: [{ description: '', amount: 0, daysAfter: 0 }] // Start with one cost
+      costs: [{ description: '', amount: 0, date: format(new Date(), 'yyyy-MM-dd') }] // Start with one cost
     }])
   }
 
@@ -90,7 +90,9 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
 
   const addCost = (milestoneIndex: number) => {
     const updated = [...milestones]
-    updated[milestoneIndex].costs.push({ description: '', amount: 0, daysAfter: 0 })
+    // Default new cost to same date as milestone
+    const milestoneDate = updated[milestoneIndex].date
+    updated[milestoneIndex].costs.push({ description: '', amount: 0, date: milestoneDate })
     setMilestones(updated)
   }
 
@@ -139,10 +141,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
         setContractValue('')
         setStartDate(format(new Date(), 'yyyy-MM-dd'))
         setMilestones([
-          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] },
-          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, daysAfter: 0 }] }
+          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(new Date(), 'yyyy-MM-dd') }] },
+          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') }] },
+          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') }] },
+          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [{ description: '', amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }] }
         ])
       } else {
         const error = await response.json()
@@ -318,7 +320,7 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                     <div className="space-y-2">
                       {milestone.costs.map((cost, costIndex) => (
                           <div key={costIndex} className="grid grid-cols-12 gap-2 items-start">
-                            <div className="col-span-5">
+                            <div className="col-span-4">
                               <input
                                 type="text"
                                 value={cost.description}
@@ -341,13 +343,12 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                                 />
                               </div>
                             </div>
-                            <div className="col-span-3">
+                            <div className="col-span-4">
                               <input
-                                type="number"
-                                value={cost.daysAfter}
-                                onChange={(e) => updateCost(index, costIndex, 'daysAfter', parseInt(e.target.value) || 0)}
+                                type="date"
+                                value={cost.date}
+                                onChange={(e) => updateCost(index, costIndex, 'date', e.target.value)}
                                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="0 (days)"
                               />
                             </div>
                             <div className="col-span-1 flex items-center">
