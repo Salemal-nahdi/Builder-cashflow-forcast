@@ -76,7 +76,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
 
           {/* Bars for each period */}
           {periodsWithBalance.map((period, index) => {
-            const x = (index / periods.length) * 100
+            const xPos = (index / periods.length) * chartWidth
             const incomeHeight = Math.abs((period.income / range) * chartHeight)
             const expensesHeight = Math.abs((period.expenses / range) * chartHeight)
 
@@ -84,9 +84,9 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
               <g key={index}>
                 {/* Income bar (green) */}
                 <rect
-                  x={`${x}%`}
+                  x={xPos}
                   y={scaleY(period.income)}
-                  width={`${barWidth / chartWidth * 100}%`}
+                  width={barWidth}
                   height={incomeHeight}
                   fill="#10b981"
                   opacity="0.8"
@@ -95,9 +95,9 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
 
                 {/* Expenses bar (red) */}
                 <rect
-                  x={`${x + barWidth / chartWidth * 100}%`}
+                  x={xPos + barWidth}
                   y={scaleY(Math.abs(period.expenses))}
-                  width={`${barWidth / chartWidth * 100}%`}
+                  width={barWidth}
                   height={expensesHeight}
                   fill="#ef4444"
                   opacity="0.8"
@@ -106,7 +106,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
 
                 {/* Balance line point */}
                 <circle
-                  cx={`${x + (groupWidth / 2 / chartWidth * 100)}%`}
+                  cx={((index / periods.length) * chartWidth) + (groupWidth / 2)}
                   cy={scaleY(period.balance)}
                   r="4"
                   fill="#3b82f6"
@@ -114,7 +114,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
 
                 {/* Month label */}
                 <text
-                  x={`${x + (groupWidth / 2 / chartWidth * 100)}%`}
+                  x={((index / periods.length) * chartWidth) + (groupWidth / 2)}
                   y={chartHeight + 20}
                   textAnchor="middle"
                   className="text-xs fill-gray-600"
@@ -124,7 +124,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
 
                 {/* Balance value */}
                 <text
-                  x={`${x + (groupWidth / 2 / chartWidth * 100)}%`}
+                  x={((index / periods.length) * chartWidth) + (groupWidth / 2)}
                   y={scaleY(period.balance) - 10}
                   textAnchor="middle"
                   className="text-xs fill-blue-600 font-medium"
@@ -138,8 +138,9 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
           {/* Balance line */}
           <polyline
             points={periodsWithBalance.map((p, i) => {
-              const x = (i / periods.length) * 100 + (groupWidth / 2 / chartWidth * 100)
-              return `${x}%,${scaleY(p.balance)}`
+              const x = ((i / periods.length) * chartWidth) + (groupWidth / 2)
+              const y = scaleY(p.balance)
+              return `${x},${y}`
             }).join(' ')}
             fill="none"
             stroke="#3b82f6"
@@ -183,20 +184,20 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
                   {format(new Date(period.date), 'MMM yyyy')}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right text-green-600">
-                  ${period.income.toLocaleString()}
+                  ${(period.income || 0).toLocaleString()}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right text-red-600">
-                  ${Math.abs(period.expenses).toLocaleString()}
+                  ${Math.abs(period.expenses || 0).toLocaleString()}
                 </td>
                 <td className={`px-4 py-2 whitespace-nowrap text-right font-medium ${
-                  period.netFlow >= 0 ? 'text-green-600' : 'text-red-600'
+                  (period.netFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  ${period.netFlow.toLocaleString()}
+                  ${(period.netFlow || 0).toLocaleString()}
                 </td>
                 <td className={`px-4 py-2 whitespace-nowrap text-right font-bold ${
-                  period.balance >= 0 ? 'text-blue-600' : 'text-red-600'
+                  (period.balance || 0) >= 0 ? 'text-blue-600' : 'text-red-600'
                 }`}>
-                  ${period.balance.toLocaleString()}
+                  ${(period.balance || 0).toLocaleString()}
                 </td>
               </tr>
             ))}
