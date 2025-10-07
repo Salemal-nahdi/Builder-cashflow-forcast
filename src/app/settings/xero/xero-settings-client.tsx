@@ -392,8 +392,9 @@ export function XeroSettingsClient({
                   </div>
                 </div>
               )}
-            </div>
-          ))}
+              </div>
+            )
+          })}
         </div>
       </div>
 
