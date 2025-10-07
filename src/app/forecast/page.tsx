@@ -76,10 +76,6 @@ export default async function ForecastPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-sm font-medium text-gray-600">Current Balance</p>
-            <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.currentBalance).toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
             <p className="text-sm font-medium text-gray-600">6-Month Income</p>
             <p className="text-2xl font-bold text-green-600">${Number(cashflowSummary.totalIncome).toLocaleString()}</p>
           </div>
@@ -88,9 +84,15 @@ export default async function ForecastPage() {
             <p className="text-2xl font-bold text-red-600">${Number(cashflowSummary.totalOutgo).toLocaleString()}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-sm font-medium text-gray-600">Projected Balance</p>
-            <p className={`text-2xl font-bold ${Number(cashflowSummary.projectedBalance) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              ${Number(cashflowSummary.projectedBalance).toLocaleString()}
+            <p className="text-sm font-medium text-gray-600">Net Cashflow</p>
+            <p className={`text-2xl font-bold ${Number(cashflowSummary.netCashflow) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${Number(cashflowSummary.netCashflow).toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <p className="text-sm font-medium text-gray-600">Lowest Balance</p>
+            <p className={`text-2xl font-bold ${Number(cashflowSummary.lowestBalance) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              ${Number(cashflowSummary.lowestBalance).toLocaleString()}
             </p>
           </div>
         </div>
@@ -100,7 +102,7 @@ export default async function ForecastPage() {
           <ForecastPageClient 
             forecastPeriods={forecastPeriods}
             projects={projects}
-            startingBalance={Number(cashflowSummary.currentBalance)}
+            startingBalance={0}
           />
         </div>
 
