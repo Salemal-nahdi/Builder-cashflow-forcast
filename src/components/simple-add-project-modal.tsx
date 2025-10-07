@@ -7,7 +7,8 @@ import { addDays, format } from 'date-fns'
 interface Milestone {
   name: string
   percentage: number
-  daysFromStart: number
+  amount: number
+  date: string
 }
 
 interface SimpleAddProjectModalProps {
@@ -22,22 +23,57 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const [contractValue, setContractValue] = useState('')
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [milestones, setMilestones] = useState<Milestone[]>([
-    { name: 'Deposit', percentage: 10, daysFromStart: 0 },
-    { name: 'Foundation', percentage: 20, daysFromStart: 30 },
-    { name: 'Framing', percentage: 30, daysFromStart: 60 },
-    { name: 'Final Payment', percentage: 40, daysFromStart: 90 }
+    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd') },
+    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') },
+    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') },
+    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }
   ])
+
+  // Auto-calculate amounts when contract value or percentages change
+  const updateMilestoneAmounts = (value: string, milestones: Milestone[]) => {
+    if (!value) return milestones
+    const total = parseFloat(value)
+    return milestones.map(m => ({
+      ...m,
+      amount: (total * m.percentage) / 100
+    }))
+  }
 
   if (!isOpen) return null
 
   const updateMilestone = (index: number, field: keyof Milestone, value: any) => {
     const updated = [...milestones]
     updated[index] = { ...updated[index], [field]: value }
+    
+    // If percentage changed and we have a contract value, recalculate amount
+    if (field === 'percentage' && contractValue) {
+      const total = parseFloat(contractValue)
+      updated[index].amount = (total * parseFloat(value)) / 100
+    }
+    
+    // If amount changed and we have a contract value, recalculate percentage
+    if (field === 'amount' && contractValue) {
+      const total = parseFloat(contractValue)
+      updated[index].percentage = (parseFloat(value) / total) * 100
+    }
+    
     setMilestones(updated)
   }
 
+  const handleContractValueChange = (value: string) => {
+    setContractValue(value)
+    if (value) {
+      setMilestones(updateMilestoneAmounts(value, milestones))
+    }
+  }
+
   const addMilestone = () => {
-    setMilestones([...milestones, { name: '', percentage: 0, daysFromStart: 0 }])
+    setMilestones([...milestones, { 
+      name: '', 
+      percentage: 0, 
+      amount: 0, 
+      date: format(new Date(), 'yyyy-MM-dd') 
+    }])
   }
 
   const removeMilestone = (index: number) => {
@@ -49,8 +85,6 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
     setIsSubmitting(true)
 
     try {
-      const projectStartDate = new Date(startDate)
-      
       const response = await fetch('/api/projects/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +95,8 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
           milestones: milestones.map(m => ({
             name: m.name,
             percentage: m.percentage,
-            date: format(addDays(projectStartDate, m.daysFromStart), 'yyyy-MM-dd')
+            amount: m.amount,
+            date: m.date
           }))
         })
       })
@@ -74,10 +109,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
         setContractValue('')
         setStartDate(format(new Date(), 'yyyy-MM-dd'))
         setMilestones([
-          { name: 'Deposit', percentage: 10, daysFromStart: 0 },
-          { name: 'Foundation', percentage: 20, daysFromStart: 30 },
-          { name: 'Framing', percentage: 30, daysFromStart: 60 },
-          { name: 'Final Payment', percentage: 40, daysFromStart: 90 }
+          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd') },
+          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') },
+          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') },
+          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }
         ])
       } else {
         const error = await response.json()
@@ -138,7 +173,7 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                     type="number"
                     required
                     value={contractValue}
-                    onChange={(e) => setContractValue(e.target.value)}
+                    onChange={(e) => handleContractValueChange(e.target.value)}
                     className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="450000"
                   />
@@ -178,56 +213,74 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
 
             <div className="space-y-3">
               {milestones.map((milestone, index) => (
-                <div key={index} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      required
-                      value={milestone.name}
-                      onChange={(e) => updateMilestone(index, 'name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="Payment name"
-                    />
-                  </div>
-                  <div className="w-24">
-                    <div className="relative">
+                <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex-1">
                       <input
-                        type="number"
+                        type="text"
                         required
-                        min="0"
-                        max="100"
-                        value={milestone.percentage}
-                        onChange={(e) => updateMilestone(index, 'percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md text-sm"
+                        value={milestone.name}
+                        onChange={(e) => updateMilestone(index, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-medium"
+                        placeholder="Payment name"
                       />
-                      <span className="absolute right-3 top-2 text-sm text-gray-500">%</span>
                     </div>
+                    {milestones.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeMilestone(index)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                  <div className="w-32">
-                    <div className="relative">
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Percentage</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={milestone.percentage}
+                          onChange={(e) => updateMilestone(index, 'percentage', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md text-sm"
+                        />
+                        <span className="absolute right-3 top-2 text-sm text-gray-500">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-sm text-gray-500">$</span>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={milestone.amount}
+                          onChange={(e) => updateMilestone(index, 'amount', parseFloat(e.target.value) || 0)}
+                          className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Date</label>
                       <input
-                        type="number"
+                        type="date"
                         required
-                        min="0"
-                        value={milestone.daysFromStart}
-                        onChange={(e) => updateMilestone(index, 'daysFromStart', parseInt(e.target.value) || 0)}
+                        value={milestone.date}
+                        onChange={(e) => updateMilestone(index, 'date', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        placeholder="Days"
                       />
-                      <div className="text-xs text-gray-500 mt-1">days from start</div>
                     </div>
                   </div>
-                  {milestones.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeMilestone(index)}
-                      className="text-red-600 hover:text-red-800 p-1"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -242,18 +295,22 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
           </div>
 
           {/* Preview */}
-          {contractValue && (
+          {contractValue && milestones.length > 0 && (
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">Payment Schedule</h4>
+              <h4 className="text-sm font-medium text-blue-900 mb-2">Payment Schedule Summary</h4>
               <div className="space-y-1 text-sm">
                 {milestones.map((m, i) => (
                   <div key={i} className="flex justify-between text-blue-700">
-                    <span>{m.name}</span>
+                    <span>{m.name} - {format(new Date(m.date), 'MMM d, yyyy')}</span>
                     <span className="font-medium">
-                      ${((parseFloat(contractValue) * m.percentage) / 100).toLocaleString()}
+                      ${m.amount.toLocaleString()} ({m.percentage.toFixed(1)}%)
                     </span>
                   </div>
                 ))}
+                <div className="pt-2 border-t border-blue-200 flex justify-between font-bold text-blue-900">
+                  <span>Total</span>
+                  <span>${milestones.reduce((sum, m) => sum + m.amount, 0).toLocaleString()}</span>
+                </div>
               </div>
             </div>
           )}
