@@ -4,8 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ForecastEngine } from '@/lib/forecast-engine'
-import { PaymentOptimizer } from '@/lib/payment-optimizer'
-import { addMonths, format } from 'date-fns'
+import { addMonths } from 'date-fns'
 import { DashboardClient } from '@/components/dashboard-client'
 import { DashboardForecastWithDates } from '@/components/dashboard-forecast-with-dates'
 
@@ -55,10 +54,6 @@ export default async function DashboardPage() {
   const forecastEngine = new ForecastEngine(organizationId, startDate, endDate)
   const forecastPeriods = await forecastEngine.generateForecast('monthly')
   const cashflowSummary = await forecastEngine.getCashflowSummary()
-
-  // Get payment optimizer suggestions
-  const paymentOptimizer = new PaymentOptimizer(organizationId, 100000, 50000)
-  const suggestions = await paymentOptimizer.generateSuggestions(startDate, endDate)
 
   // Get Xero connection status
   const xeroConnection = await prisma.xeroConnection.findFirst({
@@ -174,40 +169,6 @@ export default async function DashboardPage() {
           initialProjects={organization.projects}
           initialBalance={0}
         />
-
-        {/* Payment Optimizer Suggestions */}
-        {suggestions.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Optimization Suggestions</h2>
-            <div className="space-y-4">
-              {suggestions.slice(0, 3).map((suggestion) => (
-                <div key={suggestion.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{suggestion.entityName}</h3>
-                      <p className="text-sm text-gray-600">{suggestion.reason}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {format(suggestion.currentDate, 'MMM dd, yyyy')} → {format(suggestion.suggestedDate, 'MMM dd, yyyy')}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-green-600">
-                        +${suggestion.impact.cashFlowImprovement.toLocaleString()}
-                      </p>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        suggestion.impact.riskLevel === 'low' ? 'bg-green-100 text-green-800' :
-                        suggestion.impact.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {suggestion.impact.riskLevel} risk
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Projects Section */}
         <div className="mb-8">
