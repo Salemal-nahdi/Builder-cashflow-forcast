@@ -126,7 +126,7 @@ export default async function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">6-Month Outgo</p>
-                <p className="text-2xl font-bold text-gray-900">${cashflowSummary.totalOutgo.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.totalOutgo).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default async function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Lowest Balance</p>
-                <p className="text-2xl font-bold text-gray-900">${cashflowSummary.lowestBalance.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${Number(cashflowSummary.lowestBalance).toLocaleString()}</p>
               </div>
             </div>
           </div>
