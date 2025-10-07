@@ -54,6 +54,7 @@ export default async function SettingsPage() {
       defaultRetentionPercentage: organization.settings.defaultRetentionPercentage 
         ? Number(organization.settings.defaultRetentionPercentage) 
         : null,
+      defaultAccountingBasis: organization.settings.defaultAccountingBasis || 'accrual',
     } : null,
   }
 

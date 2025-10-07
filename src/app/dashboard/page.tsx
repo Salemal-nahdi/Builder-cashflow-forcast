@@ -7,6 +7,7 @@ import { ForecastEngine } from '@/lib/forecast-engine'
 import { addMonths } from 'date-fns'
 import { DashboardClient } from '@/components/dashboard-client'
 import { DashboardForecastWithDates } from '@/components/dashboard-forecast-with-dates'
+import { DashboardProjectEditCard } from '@/components/dashboard-project-edit-card'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -35,6 +36,20 @@ export default async function DashboardPage() {
             where: { status: { in: ['pending', 'invoiced'] } },
             orderBy: { expectedDate: 'asc' },
           },
+          xeroTrackingMaps: {
+            include: {
+              trackingOption: {
+                include: {
+                  category: true
+                }
+              }
+            }
+          },
+          xeroContactMap: {
+            include: {
+              contact: true
+            }
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 6,
@@ -55,12 +70,33 @@ export default async function DashboardPage() {
   const forecastPeriods = await forecastEngine.generateForecast('monthly')
   const cashflowSummary = await forecastEngine.getCashflowSummary()
 
-  // Get Xero connection status
+  // Get Xero connection status with tracking categories and contacts
   const xeroConnection = await prisma.xeroConnection.findFirst({
     where: {
       organizationId,
       isActive: true,
     },
+    include: {
+      trackingCategories: {
+        include: {
+          options: true
+        }
+      },
+      contacts: {
+        where: {
+          status: 'ACTIVE'
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      }
+    }
+  })
+
+  // Get project groups for dropdown
+  const projectGroups = await prisma.projectGroup.findMany({
+    where: { organizationId },
+    orderBy: { name: 'asc' }
   })
 
   // Get actual events count
@@ -76,6 +112,7 @@ export default async function DashboardPage() {
       xeroConnection={xeroConnection}
       projects={organization.projects}
       cashflowSummary={cashflowSummary}
+      projectGroups={projectGroups}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Cash Position Overview */}
@@ -195,20 +232,14 @@ export default async function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {organization.projects.map((project) => (
-                <div key={project.id} className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-                  <div className="mt-4 flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      {project.milestones.length} milestones
-                    </span>
-                    <span className="text-sm font-medium text-gray-900">
-                      ${Number(project.contractValue || 0).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
+                <DashboardProjectEditCard
+                  key={project.id}
+                  project={project}
+                  xeroConnection={xeroConnection}
+                  projectGroups={projectGroups}
+                />
               ))}
             </div>
           )}

@@ -9,6 +9,7 @@ interface DashboardClientProps {
   xeroConnection: any
   projects: any[]
   cashflowSummary: any
+  projectGroups: any[]
   children: React.ReactNode
 }
 
@@ -17,6 +18,7 @@ export function DashboardClient({
   xeroConnection,
   projects,
   cashflowSummary,
+  projectGroups,
   children
 }: DashboardClientProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
