@@ -94,6 +94,12 @@ export function DashboardProjectEditCard({
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null)
   const [editingCostId, setEditingCostId] = useState<string | null>(null)
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
+  
+  // Add new milestone/cost state
+  const [isAddingMilestone, setIsAddingMilestone] = useState(false)
+  const [isAddingCost, setIsAddingCost] = useState(false)
+  const [newMilestone, setNewMilestone] = useState({ name: '', date: '', amount: 0 })
+  const [newCost, setNewCost] = useState({ supplierName: '', date: '', amount: 0 })
 
   const totalIncome = project.milestones.reduce((sum: number, m: any) => sum + Number(m.amount), 0)
   const totalCosts = project.supplierClaims.reduce((sum: number, c: any) => sum + Number(c.amount), 0)
@@ -256,6 +262,68 @@ export function DashboardProjectEditCard({
     setEditingCostId(null)
   }
 
+  const handleAddMilestone = async () => {
+    if (!newMilestone.name || !newMilestone.date || newMilestone.amount <= 0) {
+      alert('Please fill in all milestone fields')
+      return
+    }
+
+    setSavingItemId('new-milestone')
+    try {
+      const response = await fetch(`/api/projects/${project.id}/milestones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newMilestone.name,
+          expectedDate: new Date(newMilestone.date).toISOString(),
+          amount: newMilestone.amount,
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to add milestone')
+
+      setNewMilestone({ name: '', date: '', amount: 0 })
+      setIsAddingMilestone(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error adding milestone:', error)
+      alert('Failed to add milestone')
+    } finally {
+      setSavingItemId(null)
+    }
+  }
+
+  const handleAddCost = async () => {
+    if (!newCost.supplierName || !newCost.date || newCost.amount <= 0) {
+      alert('Please fill in all cost fields')
+      return
+    }
+
+    setSavingItemId('new-cost')
+    try {
+      const response = await fetch(`/api/projects/${project.id}/costs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierName: newCost.supplierName,
+          expectedDate: new Date(newCost.date).toISOString(),
+          amount: newCost.amount,
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to add cost')
+
+      setNewCost({ supplierName: '', date: '', amount: 0 })
+      setIsAddingCost(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error adding cost:', error)
+      alert('Failed to add cost')
+    } finally {
+      setSavingItemId(null)
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
       {/* Card Header */}
@@ -290,13 +358,34 @@ export function DashboardProjectEditCard({
               </select>
             )}
 
-            {/* Xero Linked Badge */}
-            {project.xeroTrackingMaps && project.xeroTrackingMaps.length > 0 && !isEditing && (
-              <div className="flex items-center gap-1 mt-2">
-                <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span className="text-xs text-blue-600 font-medium">Linked to Xero</span>
+            {/* Xero Linked Badge - Always show when there are mappings */}
+            {project.xeroTrackingMaps && project.xeroTrackingMaps.length > 0 && (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center gap-1">
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-xs text-blue-600 font-medium">Linked to Xero</span>
+                </div>
+                {!isExpanded && (
+                  <div className="flex flex-wrap gap-1">
+                    {project.xeroTrackingMaps.slice(0, 2).map((map: any) => (
+                      <span key={map.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {map.trackingOption.name}
+                      </span>
+                    ))}
+                    {project.xeroTrackingMaps.length > 2 && (
+                      <span className="text-xs text-gray-500">+{project.xeroTrackingMaps.length - 2} more</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Show if no Xero mapping when connection exists */}
+            {xeroConnection && (!project.xeroTrackingMaps || project.xeroTrackingMaps.length === 0) && !isExpanded && (
+              <div className="mt-2">
+                <span className="text-xs text-gray-500 italic">Not linked to Xero</span>
               </div>
             )}
           </div>
@@ -377,8 +466,74 @@ export function DashboardProjectEditCard({
 
           {/* Milestones */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Milestones ({project.milestones.length})</h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium text-gray-700">Milestones ({project.milestones.length})</h4>
+              <button
+                onClick={() => setIsAddingMilestone(true)}
+                className="text-xs text-blue-600 hover:text-blue-700"
+              >
+                + Add Milestone
+              </button>
+            </div>
             <div className="space-y-2">
+              {/* Add Milestone Form */}
+              {isAddingMilestone && (
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Milestone Name</label>
+                      <input
+                        type="text"
+                        value={newMilestone.name}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, name: e.target.value })}
+                        className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        placeholder="e.g. Initial Payment"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">Date</label>
+                        <input
+                          type="date"
+                          value={newMilestone.date}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, date: e.target.value })}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                        <input
+                          type="number"
+                          value={newMilestone.amount}
+                          onChange={(e) => setNewMilestone({ ...newMilestone, amount: Number(e.target.value) })}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAddMilestone}
+                        disabled={savingItemId === 'new-milestone'}
+                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {savingItemId === 'new-milestone' ? 'Adding...' : 'Add'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsAddingMilestone(false)
+                          setNewMilestone({ name: '', date: '', amount: 0 })
+                        }}
+                        disabled={savingItemId === 'new-milestone'}
+                        className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {project.milestones.map((milestone: any) => (
                 <div key={milestone.id} className="bg-gray-50 p-2 rounded">
                   {editingMilestoneId === milestone.id ? (
@@ -448,10 +603,75 @@ export function DashboardProjectEditCard({
           </div>
 
           {/* Costs */}
-          {project.supplierClaims.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Costs ({project.supplierClaims.length})</h4>
-              <div className="space-y-2">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium text-gray-700">Costs ({project.supplierClaims.length})</h4>
+              <button
+                onClick={() => setIsAddingCost(true)}
+                className="text-xs text-blue-600 hover:text-blue-700"
+              >
+                + Add Cost
+              </button>
+            </div>
+            <div className="space-y-2">
+              {/* Add Cost Form */}
+              {isAddingCost && (
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Supplier Name</label>
+                      <input
+                        type="text"
+                        value={newCost.supplierName}
+                        onChange={(e) => setNewCost({ ...newCost, supplierName: e.target.value })}
+                        className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        placeholder="e.g. ABC Supplies"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">Date</label>
+                        <input
+                          type="date"
+                          value={newCost.date}
+                          onChange={(e) => setNewCost({ ...newCost, date: e.target.value })}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                        <input
+                          type="number"
+                          value={newCost.amount}
+                          onChange={(e) => setNewCost({ ...newCost, amount: Number(e.target.value) })}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAddCost}
+                        disabled={savingItemId === 'new-cost'}
+                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {savingItemId === 'new-cost' ? 'Adding...' : 'Add'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsAddingCost(false)
+                          setNewCost({ supplierName: '', date: '', amount: 0 })
+                        }}
+                        disabled={savingItemId === 'new-cost'}
+                        className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
                 {project.supplierClaims.map((claim: any) => (
                   <div key={claim.id} className="bg-gray-50 p-2 rounded">
                     {editingCostId === claim.id ? (
@@ -517,9 +737,8 @@ export function DashboardProjectEditCard({
                     )}
                   </div>
                 ))}
-              </div>
             </div>
-          )}
+          </div>
 
           {/* Xero Mapping Section - Always visible when connection exists */}
           {xeroConnection && (
