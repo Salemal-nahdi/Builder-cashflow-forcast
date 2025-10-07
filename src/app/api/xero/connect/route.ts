@@ -12,6 +12,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Validate Xero environment variables
+    if (!process.env.XERO_CLIENT_ID || !process.env.XERO_CLIENT_SECRET || !process.env.XERO_REDIRECT_URI) {
+      console.error('Xero environment variables not configured:', {
+        hasClientId: !!process.env.XERO_CLIENT_ID,
+        hasClientSecret: !!process.env.XERO_CLIENT_SECRET,
+        hasRedirectUri: !!process.env.XERO_REDIRECT_URI,
+      })
+      return NextResponse.json(
+        { error: 'Xero integration not configured. Please check environment variables.' },
+        { status: 500 }
+      )
+    }
+
     // Generate state parameter for security
     const state = randomBytes(32).toString('hex')
     
@@ -34,8 +47,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error initiating Xero OAuth:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to initiate Xero connection'
     return NextResponse.json(
-      { error: 'Failed to initiate Xero connection' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

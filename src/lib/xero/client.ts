@@ -295,10 +295,21 @@ export class XeroApiClient {
 // Static methods for OAuth flow
 export class XeroOAuth {
   static async getAuthUrl(state: string): Promise<string> {
+    // Validate environment variables
+    if (!process.env.XERO_CLIENT_ID) {
+      throw new Error('XERO_CLIENT_ID environment variable is not set')
+    }
+    if (!process.env.XERO_CLIENT_SECRET) {
+      throw new Error('XERO_CLIENT_SECRET environment variable is not set')
+    }
+    if (!process.env.XERO_REDIRECT_URI) {
+      throw new Error('XERO_REDIRECT_URI environment variable is not set')
+    }
+
     const client = new XeroClient({
-      clientId: process.env.XERO_CLIENT_ID!,
-      clientSecret: process.env.XERO_CLIENT_SECRET!,
-      redirectUris: [process.env.XERO_REDIRECT_URI!],
+      clientId: process.env.XERO_CLIENT_ID,
+      clientSecret: process.env.XERO_CLIENT_SECRET,
+      redirectUris: [process.env.XERO_REDIRECT_URI],
       scopes: [
         'accounting.settings',
         'accounting.contacts.read',
@@ -308,6 +319,7 @@ export class XeroOAuth {
       ],
     })
 
+    // Build the consent URL with the state parameter
     return client.buildConsentUrl()
   }
 

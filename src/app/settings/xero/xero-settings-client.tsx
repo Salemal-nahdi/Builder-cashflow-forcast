@@ -80,13 +80,19 @@ export function XeroSettingsClient({
       const response = await fetch('/api/xero/connect')
       const data = await response.json()
       
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to connect to Xero')
+      }
+      
       if (data.authUrl) {
         window.location.href = data.authUrl
       } else {
-        throw new Error('Failed to get authorization URL')
+        throw new Error('No authorization URL received from server')
       }
     } catch (error) {
-      console.error('Error connecting to Xero:', error)
+      console.error('Xero connection error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to connect to Xero: ${errorMessage}\n\nPlease make sure your Xero app credentials are configured in Netlify environment variables.`)
       setIsConnecting(false)
     }
   }
