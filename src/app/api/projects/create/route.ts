@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
         status: 'active',
         contractValue,
         startDate: new Date(startDate),
-        expectedCompletion: new Date(milestones[milestones.length - 1].date),
         retentionPercentage: 5, // Default 5% retention
         
         // Create milestones
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
               percentage: milestone.percentage,
               amount: milestoneAmount,
               retentionAmount,
-              scheduledDate: new Date(milestone.date),
+              expectedDate: new Date(milestone.date),
               contractValue,
             }
           })
@@ -73,11 +72,10 @@ export async function POST(request: NextRequest) {
               {
                 organizationId,
                 type: 'income' as const,
-                description: `${milestone.name} - Progress Payment`,
                 amount: paymentAmount,
-                status: 'pending' as const,
-                date: milestoneDate,
-                category: 'progress_claim',
+                scheduledDate: milestoneDate,
+                sourceType: 'milestone',
+                sourceId: `milestone-${milestoneIndex}`, // Will be updated after creation
               }
             ]
 
@@ -88,11 +86,10 @@ export async function POST(request: NextRequest) {
                 events.push({
                   organizationId,
                   type: 'outgo' as const,
-                  description: cost.description || `Cost for ${milestone.name}`,
                   amount: cost.amount,
-                  status: 'pending' as const,
-                  date: costDate,
-                  category: 'supplier_payment',
+                  scheduledDate: costDate,
+                  sourceType: 'supplier_claim',
+                  sourceId: `cost-${milestoneIndex}-${cost.id}`, // Will be updated after creation
                 })
               })
             }
@@ -111,13 +108,11 @@ export async function POST(request: NextRequest) {
               const costDate = addDays(milestoneDate, cost.paymentDaysOffset || 0)
               
               return {
-                organizationId,
                 supplierName: cost.description || 'Supplier',
                 description: `Cost for ${milestone.name}`,
                 amount: cost.amount,
                 status: 'pending' as const,
-                claimDate: costDate,
-                dueDate: costDate,
+                expectedDate: costDate,
               }
             })
           })
