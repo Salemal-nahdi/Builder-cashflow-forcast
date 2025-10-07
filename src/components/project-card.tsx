@@ -1,4 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -35,6 +39,44 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const router = useRouter()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!showConfirm) {
+      setShowConfirm(true)
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        router.refresh()
+      } else {
+        alert('Failed to delete project')
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      alert('Failed to delete project')
+    } finally {
+      setIsDeleting(false)
+      setShowConfirm(false)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowConfirm(false)
+  }
   const totalMilestones = project.milestones.length
   const pendingMilestones = project.milestones.filter(m => m.status === 'pending').length
   const totalSupplierClaims = project.supplierClaims.length
@@ -59,8 +101,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
   }
 
   return (
-    <Link href={`/projects/${project.id}`}>
-      <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 cursor-pointer">
+    <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 relative group">
+      <Link href={`/projects/${project.id}`} className="block">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-1">
@@ -141,7 +183,39 @@ export function ProjectCard({ project }: ProjectCardProps) {
             ></div>
           </div>
         </div>
+      </Link>
+
+      {/* Delete Button */}
+      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!showConfirm ? (
+          <button
+            onClick={handleDelete}
+            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+            title="Delete project"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-lg border border-red-200">
+            <span className="text-sm text-gray-700 whitespace-nowrap">Delete?</span>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              {isDeleting ? 'Deleting...' : 'Yes'}
+            </button>
+            <button
+              onClick={cancelDelete}
+              className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+            >
+              No
+            </button>
+          </div>
+        )}
       </div>
-    </Link>
+    </div>
   )
 }
