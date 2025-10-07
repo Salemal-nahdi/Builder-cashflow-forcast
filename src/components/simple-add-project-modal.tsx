@@ -4,11 +4,18 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addDays, format } from 'date-fns'
 
+interface Cost {
+  description: string
+  amount: number
+  daysAfter: number // Days after milestone payment
+}
+
 interface Milestone {
   name: string
   percentage: number
   amount: number
   date: string
+  costs: Cost[]
 }
 
 interface SimpleAddProjectModalProps {
@@ -23,10 +30,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
   const [contractValue, setContractValue] = useState('')
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [milestones, setMilestones] = useState<Milestone[]>([
-    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd') },
-    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') },
-    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') },
-    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }
+    { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [] },
+    { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [] },
+    { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [] },
+    { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [] }
   ])
 
   // Auto-calculate amounts when contract value or percentages change
@@ -72,12 +79,34 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
       name: '', 
       percentage: 0, 
       amount: 0, 
-      date: format(new Date(), 'yyyy-MM-dd') 
+      date: format(new Date(), 'yyyy-MM-dd'),
+      costs: []
     }])
   }
 
   const removeMilestone = (index: number) => {
     setMilestones(milestones.filter((_, i) => i !== index))
+  }
+
+  const addCost = (milestoneIndex: number) => {
+    const updated = [...milestones]
+    updated[milestoneIndex].costs.push({ description: '', amount: 0, daysAfter: 0 })
+    setMilestones(updated)
+  }
+
+  const updateCost = (milestoneIndex: number, costIndex: number, field: keyof Cost, value: any) => {
+    const updated = [...milestones]
+    updated[milestoneIndex].costs[costIndex] = {
+      ...updated[milestoneIndex].costs[costIndex],
+      [field]: value
+    }
+    setMilestones(updated)
+  }
+
+  const removeCost = (milestoneIndex: number, costIndex: number) => {
+    const updated = [...milestones]
+    updated[milestoneIndex].costs = updated[milestoneIndex].costs.filter((_, i) => i !== costIndex)
+    setMilestones(updated)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,7 +125,8 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
             name: m.name,
             percentage: m.percentage,
             amount: m.amount,
-            date: m.date
+            date: m.date,
+            costs: m.costs
           }))
         })
       })
@@ -109,10 +139,10 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
         setContractValue('')
         setStartDate(format(new Date(), 'yyyy-MM-dd'))
         setMilestones([
-          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd') },
-          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd') },
-          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd') },
-          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd') }
+          { name: 'Deposit', percentage: 10, amount: 0, date: format(new Date(), 'yyyy-MM-dd'), costs: [] },
+          { name: 'Foundation', percentage: 20, amount: 0, date: format(addDays(new Date(), 30), 'yyyy-MM-dd'), costs: [] },
+          { name: 'Framing', percentage: 30, amount: 0, date: format(addDays(new Date(), 60), 'yyyy-MM-dd'), costs: [] },
+          { name: 'Final Payment', percentage: 40, amount: 0, date: format(addDays(new Date(), 90), 'yyyy-MM-dd'), costs: [] }
         ])
       } else {
         const error = await response.json()
@@ -281,6 +311,72 @@ export function SimpleAddProjectModal({ isOpen, onClose }: SimpleAddProjectModal
                       />
                     </div>
                   </div>
+
+                  {/* Costs Section */}
+                  {milestone.costs.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-300">
+                      <h4 className="text-xs font-medium text-gray-700 mb-2">Associated Costs</h4>
+                      <div className="space-y-2">
+                        {milestone.costs.map((cost, costIndex) => (
+                          <div key={costIndex} className="grid grid-cols-12 gap-2 items-start">
+                            <div className="col-span-5">
+                              <input
+                                type="text"
+                                required
+                                value={cost.description}
+                                onChange={(e) => updateCost(index, costIndex, 'description', e.target.value)}
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                placeholder="Cost description"
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <div className="relative">
+                                <span className="absolute left-2 top-1.5 text-xs text-gray-500">$</span>
+                                <input
+                                  type="number"
+                                  required
+                                  min="0"
+                                  step="0.01"
+                                  value={cost.amount}
+                                  onChange={(e) => updateCost(index, costIndex, 'amount', parseFloat(e.target.value) || 0)}
+                                  className="w-full pl-6 pr-2 py-1.5 border border-gray-300 rounded text-xs"
+                                />
+                              </div>
+                            </div>
+                            <div className="col-span-3">
+                              <input
+                                type="number"
+                                required
+                                value={cost.daysAfter}
+                                onChange={(e) => updateCost(index, costIndex, 'daysAfter', parseInt(e.target.value) || 0)}
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                placeholder="Days after"
+                              />
+                            </div>
+                            <div className="col-span-1 flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => removeCost(index, costIndex)}
+                                className="text-red-600 hover:text-red-800 p-0.5"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => addCost(index)}
+                    className="mt-3 w-full py-1.5 border border-dashed border-gray-300 rounded text-xs text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+                  >
+                    + Add cost for this payment
+                  </button>
                 </div>
               ))}
             </div>
