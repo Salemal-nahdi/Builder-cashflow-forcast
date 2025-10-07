@@ -317,9 +317,10 @@ export class XeroOAuth {
         'projects.read',
         'offline_access'
       ],
+      state: state, // Pass the state parameter to the client
     })
 
-    // Build the consent URL with the state parameter
+    // Build the consent URL - the state is now included via the client config
     return client.buildConsentUrl()
   }
 
