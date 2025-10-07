@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { format } from 'date-fns'
 import { SimpleCashflowChart } from './simple-cashflow-chart'
 import { ForecastTableView } from './forecast-table-view'
 import { ForecastGanttView } from './forecast-gantt-view'
