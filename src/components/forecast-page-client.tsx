@@ -32,14 +32,11 @@ export function ForecastPageClient({
 
   // Transform periods for table view
   const tableData = forecastPeriods.map((p, i) => ({
-    period: i + 1,
-    startDate: p.startDate,
-    endDate: p.endDate,
+    month: format(p.startDate, 'MMM yyyy'),
     income: Number(p.income),
     outgo: Number(p.outgo),
     net: Number(p.net),
-    balance: Number(p.balance),
-    events: p.events || []
+    balance: Number(p.balance)
   }))
 
   return (
