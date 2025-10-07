@@ -47,7 +47,7 @@ export function ForecastByProjectView({
   overheadCosts,
   startingBalance 
 }: ForecastByProjectViewProps) {
-  const baseDate = new Date('2024-01-01')
+  const baseDate = new Date() // Use TODAY instead of January 1st
   const [expandedProjects, setExpandedProjects] = React.useState<Set<string>>(new Set())
   const [expandedCosts, setExpandedCosts] = React.useState<Set<string>>(new Set())
 
@@ -89,16 +89,16 @@ export function ForecastByProjectView({
       })
     }
   } else {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    monthNames.forEach((month, index) => {
+    // Generate 6 months starting from base date (today)
+    for (let index = 0; index < 6; index++) {
       const monthStart = addMonths(baseDate, index)
       const monthEnd = addMonths(baseDate, index + 1)
       periods.push({
-        label: month,
+        label: format(monthStart, 'MMM'),
         start: monthStart,
         end: monthEnd
       })
-    })
+    }
   }
 
   // Calculate data for each project per period with detailed breakdowns
