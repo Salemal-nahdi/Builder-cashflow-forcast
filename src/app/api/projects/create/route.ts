@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
             const paymentAmount = milestoneAmount - retentionAmount
             const milestoneDate = new Date(milestone.date)
 
-            const events = [
+            const events: any[] = [
               // Income event (progress claim payment)
               {
                 organizationId,
-                type: 'income' as const,
+                type: 'income',
                 amount: paymentAmount,
                 scheduledDate: milestoneDate,
                 sourceType: 'milestone',
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
                 const costDate = addDays(milestoneDate, cost.paymentDaysOffset || 0)
                 events.push({
                   organizationId,
-                  type: 'outgo' as const,
+                  type: 'outgo',
                   amount: cost.amount,
                   scheduledDate: costDate,
                   sourceType: 'supplier_claim',
