@@ -85,13 +85,35 @@
 
 ### To-dos
 
-- [ ] Add Prisma models for Xero entities, maps, ActualEvent
-- [ ] Implement Xero OAuth PKCE flow and tenant storage
-- [ ] Build sync jobs for accounts, contacts, tracking, items
-- [ ] Sync invoices, bills, payments, bank transactions
-- [ ] Transform Xero data to ActualEvent (cash/accrual) with mapping
-- [ ] Create UI to map tracking options and contacts to projects
-- [ ] Add cash/accrual toggle to dashboard and reports
-- [ ] Add API to fetch actuals summaries by project/period
-- [ ] Match ActualEvent vs CashEvent and surface variance
-- [ ] Add rate limit, retry, logs/metrics for sync
+- [x] Add Prisma models for Xero entities, maps, ActualEvent
+- [x] Implement Xero OAuth PKCE flow and tenant storage
+- [x] Build sync jobs for accounts, contacts, tracking, items
+- [x] Sync invoices, bills, payments, bank transactions
+- [x] Transform Xero data to ActualEvent (cash/accrual) with mapping
+- [x] Create UI to map tracking options and contacts to projects
+- [x] Add cash/accrual toggle to dashboard and reports
+- [x] Add API to fetch actuals summaries by project/period
+- [x] Match ActualEvent vs CashEvent and surface variance
+- [x] Add rate limit, retry, logs/metrics for sync
+- [x] Add defaultAccountingBasis to OrganizationSettings
+- [x] Enhanced Xero settings page with visual mapping indicators
+- [x] Added Xero mapping widget to project detail pages
+- [x] Project Xero mapping API endpoints (GET/POST/DELETE)
+- [x] Visual indicators showing Xero linked status on project cards
+- [x] Fixed bank transactions to appear in both cash and accrual reports
+
+## ✅ Implementation Complete!
+
+**All Xero integration features have been successfully implemented:**
+
+1. **Database & Schema**: Complete Prisma models with ActualEvent, XeroConnection, tracking categories, and mapping tables
+2. **OAuth Flow**: Full Xero OAuth 2.0 PKCE implementation with tenant management
+3. **Sync Engine**: Automated syncing of accounts, contacts, tracking categories, invoices, bills, payments, and bank transactions
+4. **ETL Pipeline**: Transforms Xero data to ActualEvents with proper cash/accrual basis handling
+5. **Mapping UI**: Multiple interfaces for linking projects to Xero tracking categories (Settings page + Project detail widgets)
+6. **Cash vs Accrual**: Organization-level default with per-report toggle controls
+7. **Visual Indicators**: Status badges showing mapping status throughout the app
+8. **API Endpoints**: RESTful APIs for managing project mappings and fetching actuals
+9. **Bank Transaction Fix**: Direct bank transactions now correctly appear in both cash and accrual reports (matching Xero behavior)
+
+The integration is production-ready and fully functional for both Xero and non-Xero users!
