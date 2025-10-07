@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ForecastEngine } from '@/lib/forecast-engine'
 import { addMonths } from 'date-fns'
-import { ForecastPageClient } from '@/components/forecast-page-client'
+import { ForecastWithDateRange } from '@/components/forecast-with-date-range'
 
 export default async function ForecastPage() {
   const session = await getServerSession(authOptions)
@@ -97,12 +97,12 @@ export default async function ForecastPage() {
           </div>
         </div>
 
-        {/* Interactive Forecast Views */}
+        {/* Interactive Forecast Views with Date Range */}
         <div className="mb-8">
-          <ForecastPageClient 
-            forecastPeriods={forecastPeriods}
-            projects={projects}
-            startingBalance={0}
+          <ForecastWithDateRange 
+            initialPeriods={forecastPeriods}
+            initialProjects={projects}
+            initialBalance={0}
           />
         </div>
 

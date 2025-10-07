@@ -7,7 +7,7 @@ import { ForecastEngine } from '@/lib/forecast-engine'
 import { PaymentOptimizer } from '@/lib/payment-optimizer'
 import { addMonths, format } from 'date-fns'
 import { DashboardClient } from '@/components/dashboard-client'
-import { DashboardForecastSection } from '@/components/dashboard-forecast-section'
+import { DashboardForecastWithDates } from '@/components/dashboard-forecast-with-dates'
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -166,11 +166,11 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Cashflow Chart with View Controls */}
-        <DashboardForecastSection 
-          forecastPeriods={forecastPeriods}
-          projects={organization.projects}
-          startingBalance={0}
+        {/* Cashflow Chart with View Controls and Date Range */}
+        <DashboardForecastWithDates 
+          initialPeriods={forecastPeriods}
+          initialProjects={organization.projects}
+          initialBalance={0}
         />
 
         {/* Payment Optimizer Suggestions */}
