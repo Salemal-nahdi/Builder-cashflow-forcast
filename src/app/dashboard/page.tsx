@@ -47,9 +47,11 @@ export default async function DashboardPage() {
     redirect('/auth/signin')
   }
 
-  // Generate forecast data
-  const startDate = new Date()
-  const endDate = addMonths(startDate, 6)
+  // Generate forecast data starting from TODAY
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Start of today
+  const startDate = today
+  const endDate = addMonths(today, 6)
   const forecastEngine = new ForecastEngine(organizationId, startDate, endDate)
   const forecastPeriods = await forecastEngine.generateForecast('monthly')
   const cashflowSummary = await forecastEngine.getCashflowSummary()
