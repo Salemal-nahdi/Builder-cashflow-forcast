@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { MilestoneCard } from '@/components/milestone-card'
 import { SupplierClaimCard } from '@/components/supplier-claim-card'
 import { ProjectTimeline } from '@/components/project-timeline'
+import { ProjectXeroMappingWidget } from '@/components/project-xero-mapping-widget'
 
 interface ProjectDetailPageProps {
   params: {
@@ -44,7 +45,44 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         where: { scenarioId: null }, // Base scenario only
         orderBy: { scheduledDate: 'asc' },
       },
+      xeroTrackingMaps: {
+        include: {
+          trackingOption: {
+            include: {
+              category: true
+            }
+          }
+        }
+      },
+      xeroContactMap: {
+        include: {
+          contact: true
+        }
+      },
     },
+  })
+
+  // Get Xero connection and tracking categories if available
+  const xeroConnection = await prisma.xeroConnection.findFirst({
+    where: {
+      organizationId,
+      isActive: true,
+    },
+    include: {
+      trackingCategories: {
+        include: {
+          options: true
+        }
+      },
+      contacts: {
+        where: {
+          status: 'ACTIVE'
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      }
+    }
   })
 
   if (!project) {
@@ -206,6 +244,19 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 </div>
               </div>
             </div>
+
+            {/* Xero Integration Widget */}
+            {xeroConnection && (
+              <div className="mt-8">
+                <ProjectXeroMappingWidget
+                  projectId={project.id}
+                  currentMappings={project.xeroTrackingMaps}
+                  currentContact={project.xeroContactMap}
+                  trackingCategories={xeroConnection.trackingCategories}
+                  contacts={xeroConnection.contacts}
+                />
+              </div>
+            )}
           </div>
         </div>
 

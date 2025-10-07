@@ -281,19 +281,40 @@ export function XeroSettingsClient({
         </p>
 
         <div className="space-y-4">
-          {projects.map((project) => (
-            <div key={project.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">{project.name}</h3>
-                <button
-                  onClick={() => setSelectedProject(project.id)}
-                  className="text-sm text-blue-600 hover:text-blue-500"
-                >
-                  {selectedProject === project.id ? 'Cancel' : 'Configure'}
-                </button>
-              </div>
+          {projects.map((project) => {
+            const hasMappings = project.xeroTrackingMaps.length > 0 || project.xeroContactMap
+            const mappedCategories = project.xeroTrackingMaps.map(m => m.trackingOption.name).join(', ')
+            
+            return (
+              <div key={project.id} className={`border rounded-lg p-4 ${hasMappings ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-gray-900">{project.name}</h3>
+                      {hasMappings && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Mapped
+                        </span>
+                      )}
+                    </div>
+                    {hasMappings && mappedCategories && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        Tracking: {mappedCategories}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedProject(selectedProject === project.id ? '' : project.id)}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                  >
+                    {selectedProject === project.id ? 'Close' : 'Edit Mapping'}
+                  </button>
+                </div>
 
-              {selectedProject === project.id && (
+                {selectedProject === project.id && (
                 <div className="space-y-4">
                   {/* Tracking Options */}
                   <div>
@@ -372,22 +393,8 @@ export function XeroSettingsClient({
                 </div>
               )}
 
-              {/* Current Mappings */}
-              <div className="mt-3 text-sm text-gray-600">
-                {project.xeroTrackingMaps.length > 0 && (
-                  <div>
-                    <span className="font-medium">Tracking:</span>{' '}
-                    {project.xeroTrackingMaps.map(map => map.trackingOption.name).join(', ')}
-                  </div>
-                )}
-                {project.xeroContactMap && (
-                  <div>
-                    <span className="font-medium">Contact:</span> {project.xeroContactMap.contact.name}
-                  </div>
-                )}
-              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
