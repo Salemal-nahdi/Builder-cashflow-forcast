@@ -71,6 +71,33 @@ export function XeroSettingsClient({
     } else if (error) {
       // Show error message
       console.error('Xero connection error:', error)
+      
+      let errorMessage = 'Failed to connect to Xero.'
+      
+      if (error === 'missing_oauth_params' || error === 'missing_parameters') {
+        errorMessage = `Xero OAuth callback error: Missing required parameters.
+
+This usually means:
+1. The Redirect URI in your Xero app doesn't match your Netlify URL
+2. Expected: ${window.location.origin}/api/xero/callback
+3. Check your Xero app settings at developer.xero.com
+
+Please verify:
+- XERO_REDIRECT_URI environment variable in Netlify
+- Redirect URI in your Xero app configuration
+- Both should match exactly (including https://)`
+      } else if (error === 'invalid_state') {
+        errorMessage = 'Security validation failed. Please try connecting again.'
+      } else if (error === 'connection_failed') {
+        errorMessage = 'Failed to establish connection with Xero. Please check your credentials and try again.'
+      } else {
+        errorMessage = `Xero connection failed: ${decodeURIComponent(error)}`
+      }
+      
+      alert(errorMessage)
+      
+      // Clear the error from URL
+      router.push('/settings/xero')
     }
   }, [searchParams, router])
 

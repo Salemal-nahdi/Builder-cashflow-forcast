@@ -8,17 +8,30 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code')
     const state = searchParams.get('state')
     const error = searchParams.get('error')
+    const errorDescription = searchParams.get('error_description')
+
+    console.log('Xero callback received with params:', {
+      hasCode: !!code,
+      hasState: !!state,
+      error,
+      errorDescription,
+      allParams: Array.from(searchParams.entries())
+    })
 
     if (error) {
-      console.error('Xero OAuth error:', error)
+      console.error('Xero OAuth error:', error, errorDescription)
+      const errorMsg = errorDescription || error
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=${encodeURIComponent(error)}`
+        `${process.env.NEXTAUTH_URL}/settings/xero?error=${encodeURIComponent(errorMsg)}`
       )
     }
 
     if (!code || !state) {
+      console.error('Missing OAuth parameters. Code:', !!code, 'State:', !!state)
+      console.error('This usually means the Xero redirect URI is misconfigured')
+      console.error('Expected redirect URI:', process.env.XERO_REDIRECT_URI)
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=missing_parameters`
+        `${process.env.NEXTAUTH_URL}/settings/xero?error=missing_oauth_params`
       )
     }
 
