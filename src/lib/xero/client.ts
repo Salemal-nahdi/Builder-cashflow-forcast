@@ -345,6 +345,7 @@ export class XeroOAuth {
         'projects.read',
         'offline_access'
       ],
+      state: state, // Set the state in the client for validation
     })
 
     // Build the callback URL with the code and state parameters
