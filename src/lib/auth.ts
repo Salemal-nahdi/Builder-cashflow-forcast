@@ -21,6 +21,14 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
+          // Check database connection first
+          try {
+            await prisma.$queryRaw`SELECT 1`
+          } catch (dbError) {
+            console.error('Database connection failed during auth:', dbError)
+            throw new Error('Database connection failed. Please try again.')
+          }
+
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
             include: {
@@ -48,6 +56,10 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           console.error('Auth error:', error)
+          // Don't return null for connection errors, let NextAuth handle it
+          if (error instanceof Error && error.message.includes('Database connection failed')) {
+            throw error
+          }
           return null
         }
       }

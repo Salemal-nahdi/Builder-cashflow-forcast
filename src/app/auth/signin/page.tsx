@@ -25,7 +25,13 @@ export default function SignInPage() {
       })
 
       if (result?.error) {
-        setMessage('Invalid email or password. Please try again.')
+        if (result.error.includes('Database connection failed')) {
+          setMessage('Database connection issue. Please try again in a moment.')
+        } else if (result.error.includes('CredentialsSignin')) {
+          setMessage('Invalid email or password. Please try again.')
+        } else {
+          setMessage(`Sign-in failed: ${result.error}`)
+        }
       } else if (result?.ok) {
         router.push('/dashboard')
       }
