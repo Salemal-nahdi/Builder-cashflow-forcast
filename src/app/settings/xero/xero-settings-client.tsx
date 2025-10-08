@@ -146,13 +146,16 @@ Please verify:
       
       if (data.success) {
         setSyncStatus(data.stats)
+        alert('Sync completed successfully!')
         // Refresh the page to show updated data
         router.refresh()
       } else {
-        throw new Error(data.error || 'Sync failed')
+        throw new Error(data.details || data.error || 'Sync failed')
       }
     } catch (error) {
       console.error('Error syncing with Xero:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Sync failed: ${errorMessage}\n\nCheck the browser console for more details.`)
     } finally {
       setIsSyncing(false)
     }
