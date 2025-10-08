@@ -550,7 +550,7 @@ model XeroAccount {
   connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   
   xeroId         String   @unique
-  code           String
+  code           String?  // Optional - not all accounts have codes
   name           String
   type           String   // REVENUE, EXPENSE, ASSET, LIABILITY, EQUITY, etc.
   class          String?  // TRADING, PROFITANDLOSS, BALANCESHEET
