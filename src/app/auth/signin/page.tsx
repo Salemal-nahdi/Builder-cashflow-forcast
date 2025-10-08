@@ -30,7 +30,8 @@ export default function SignInPage() {
         router.push('/dashboard')
       }
     } catch (error) {
-      setMessage('An error occurred. Please try again.')
+      console.error('Sign-in error:', error)
+      setMessage(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
@@ -53,7 +54,8 @@ export default function SignInPage() {
         setMessage('Check your email for a sign-in link!')
       }
     } catch (error) {
-      setMessage('An error occurred. Please try again.')
+      console.error('Email sign-in error:', error)
+      setMessage(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
