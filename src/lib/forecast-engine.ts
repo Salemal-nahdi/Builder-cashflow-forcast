@@ -23,6 +23,12 @@ export interface ForecastPeriod {
   events: CashEvent[]
   retentionHold?: number
   retentionRelease?: number
+  // Actuals data
+  actualIncome?: number
+  actualOutgo?: number
+  actualNet?: number
+  actualEvents?: CashEvent[]
+  isHistorical?: boolean // true if this period is in the past
 }
 
 export class ForecastEngine {
@@ -107,10 +113,16 @@ export class ForecastEngine {
       cashEvents.splice(0, cashEvents.length, ...shiftedEvents)
     }
 
+    // Get actuals data
+    const actualEvents = await this.getActualEvents()
+
     // Group events by period type
-    return periodType === 'weekly' 
+    const forecastPeriods = periodType === 'weekly' 
       ? this.groupEventsByWeek(cashEvents)
       : this.groupEventsByMonth(cashEvents)
+
+    // Integrate actuals into forecast periods
+    return this.integrateActuals(forecastPeriods, actualEvents)
   }
 
   private generateForecastLineEvents(forecastLine: any): CashEvent[] {
@@ -241,6 +253,72 @@ export class ForecastEngine {
         }
       }
       return event
+    })
+  }
+
+  private async getActualEvents(): Promise<CashEvent[]> {
+    const actualEvents = await prisma.actualEvent.findMany({
+      where: {
+        organizationId: this.organizationId,
+        basis: this.basis,
+        occurredAt: {
+          gte: this.startDate,
+          lte: this.endDate,
+        },
+      },
+      orderBy: { occurredAt: 'asc' },
+    })
+
+    return actualEvents.map(event => ({
+      id: event.id,
+      type: event.type as 'income' | 'outgo',
+      amount: Number(event.amount),
+      scheduledDate: event.occurredAt,
+      sourceType: event.sourceType as any,
+      sourceId: event.sourceId,
+      projectId: event.projectId || undefined,
+      description: event.description || undefined,
+    }))
+  }
+
+  private integrateActuals(forecastPeriods: ForecastPeriod[], actualEvents: CashEvent[]): ForecastPeriod[] {
+    const today = new Date()
+    
+    return forecastPeriods.map(period => {
+      const isHistorical = period.endDate < today
+      
+      if (!isHistorical) {
+        // Future period - no actuals
+        return {
+          ...period,
+          isHistorical: false,
+        }
+      }
+
+      // Historical period - include actuals
+      const periodActuals = actualEvents.filter(event => 
+        event.scheduledDate >= period.startDate && 
+        event.scheduledDate <= period.endDate
+      )
+
+      const actualIncome = periodActuals
+        .filter(event => event.type === 'income')
+        .reduce((sum, event) => sum + event.amount, 0)
+
+      const actualOutgo = periodActuals
+        .filter(event => event.type === 'outgo')
+        .reduce((sum, event) => sum + event.amount, 0)
+
+      const actualNet = actualIncome - actualOutgo
+
+      return {
+        ...period,
+        actualIncome,
+        actualOutgo,
+        actualNet,
+        actualEvents: periodActuals,
+        isHistorical: true,
+      }
     })
   }
 
