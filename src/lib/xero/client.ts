@@ -347,12 +347,19 @@ export class XeroOAuth {
       ],
     })
 
-    const tokenSet = await client.apiCallback(process.env.XERO_REDIRECT_URI!)
+    // Build the callback URL with the code and state parameters
+    const callbackUrl = `${process.env.XERO_REDIRECT_URI}?code=${code}&state=${state}`
+    const tokenSet = await client.apiCallback(callbackUrl)
     
     // Get tenant information
     await client.updateTenants()
     const tenants = client.tenants
-    const tenant = tenants[0] // Assuming single tenant for now
+    
+    if (!tenants || tenants.length === 0) {
+      throw new Error('No Xero tenants found')
+    }
+    
+    const tenant = tenants[0] // Use the first tenant
 
     return {
       accessToken: tokenSet.access_token!,
