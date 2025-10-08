@@ -161,7 +161,7 @@ export class NotificationEngine {
         message: `Projected negative balance in ${negativePeriods.length} month(s)`,
         data: {
           negativePeriods: negativePeriods.map(p => ({
-            month: format(p.startDate, 'MMM yyyy'),
+            month: format(new Date(p.startDate), 'MMM yyyy'),
             balance: p.balance,
             net: p.net,
           })),

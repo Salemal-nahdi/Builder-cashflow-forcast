@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // Generate CSV content
     const headers = ['Month', 'Income', 'Outgo', 'Net', 'Balance']
     const rows = periods.map(period => [
-      period.startDate.toISOString().slice(0, 7), // YYYY-MM format
+      period.startDate.slice(0, 7), // YYYY-MM format
       period.income.toFixed(2),
       period.outgo.toFixed(2),
       period.net.toFixed(2),

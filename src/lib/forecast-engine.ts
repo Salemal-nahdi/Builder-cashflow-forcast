@@ -14,8 +14,8 @@ export interface CashEvent {
 }
 
 export interface ForecastPeriod {
-  startDate: Date
-  endDate: Date
+  startDate: string
+  endDate: string
   income: number
   outgo: number
   net: number
@@ -285,7 +285,7 @@ export class ForecastEngine {
     const today = new Date()
     
     return forecastPeriods.map(period => {
-      const isHistorical = period.endDate < today
+      const isHistorical = new Date(period.endDate) < today
       
       if (!isHistorical) {
         // Future period - no actuals
@@ -296,9 +296,11 @@ export class ForecastEngine {
       }
 
       // Historical period - include actuals
+      const periodStart = new Date(period.startDate)
+      const periodEnd = new Date(period.endDate)
       const periodActuals = actualEvents.filter(event => 
-        event.scheduledDate >= period.startDate && 
-        event.scheduledDate <= period.endDate
+        event.scheduledDate >= periodStart && 
+        event.scheduledDate <= periodEnd
       )
 
       const actualIncome = periodActuals
@@ -354,8 +356,8 @@ export class ForecastEngine {
         .reduce((sum, e) => sum + e.amount, 0)
 
       periods.push({
-        startDate: new Date(currentDate),
-        endDate: new Date(periodEnd),
+        startDate: new Date(currentDate).toISOString(),
+        endDate: new Date(periodEnd).toISOString(),
         income,
         outgo,
         net,
@@ -405,8 +407,8 @@ export class ForecastEngine {
         .reduce((sum, e) => sum + e.amount, 0)
 
       periods.push({
-        startDate: new Date(currentDate),
-        endDate: new Date(periodEnd),
+        startDate: new Date(currentDate).toISOString(),
+        endDate: new Date(periodEnd).toISOString(),
         income,
         outgo,
         net,
@@ -498,7 +500,7 @@ export class ForecastEngine {
     for (const period of periods) {
       if (period.balance < lowestBalance) {
         lowestBalance = period.balance
-        lowestBalanceDate = period.startDate
+        lowestBalanceDate = new Date(period.startDate)
       }
       if (period.balance < 0) {
         negativeBalanceDays++
