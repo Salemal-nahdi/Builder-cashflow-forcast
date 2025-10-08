@@ -250,10 +250,10 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
               <div className="mt-8">
                 <ProjectXeroMappingWidget
                   projectId={project.id}
-                  currentMappings={project.xeroTrackingMaps}
-                  currentContact={project.xeroContactMap}
-                  trackingCategories={xeroConnection.trackingCategories}
-                  contacts={xeroConnection.contacts}
+                  currentMappings={JSON.parse(JSON.stringify(project.xeroTrackingMaps))}
+                  currentContact={JSON.parse(JSON.stringify(project.xeroContactMap))}
+                  trackingCategories={JSON.parse(JSON.stringify(xeroConnection.trackingCategories))}
+                  contacts={JSON.parse(JSON.stringify(xeroConnection.contacts))}
                 />
               </div>
             )}

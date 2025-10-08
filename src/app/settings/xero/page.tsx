@@ -87,6 +87,13 @@ export default async function XeroSettingsPage() {
     take: 50,
   })
 
+  // Serialize data to avoid Prisma Decimal serialization issues
+  const serializedConnection = xeroConnection ? JSON.parse(JSON.stringify(xeroConnection)) : null
+  const serializedProjects = JSON.parse(JSON.stringify(projects))
+  const serializedTrackingCategories = JSON.parse(JSON.stringify(trackingCategories))
+  const serializedContacts = JSON.parse(JSON.stringify(contacts))
+  const serializedUnmappedEvents = JSON.parse(JSON.stringify(unmappedEvents))
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -98,11 +105,11 @@ export default async function XeroSettingsPage() {
         </div>
 
         <XeroSettingsClient
-          xeroConnection={xeroConnection}
-          projects={projects}
-          trackingCategories={trackingCategories}
-          contacts={contacts}
-          unmappedEvents={unmappedEvents}
+          xeroConnection={serializedConnection}
+          projects={serializedProjects}
+          trackingCategories={serializedTrackingCategories}
+          contacts={serializedContacts}
+          unmappedEvents={serializedUnmappedEvents}
         />
       </div>
     </div>
