@@ -24,8 +24,8 @@ export class XeroSyncService {
   async syncAll(options: SyncOptions): Promise<void> {
     const { entityTypes = ['accounts', 'tracking', 'contacts', 'invoices', 'bills', 'payments', 'bankTransactions'], initialSync = false } = options
 
-    // Determine sync date
-    const modifiedSince = options.modifiedSince || (initialSync ? subMonths(new Date(), 12) : undefined)
+    // Determine sync date - limit initial sync to 3 months to avoid timeouts
+    const modifiedSince = options.modifiedSince || (initialSync ? subMonths(new Date(), 3) : undefined)
 
     // Create sync log
     const syncLog = await prisma.xeroSyncLog.create({

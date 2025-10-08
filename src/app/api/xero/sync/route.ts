@@ -49,24 +49,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Connection not found or inactive' }, { status: 404 })
     }
 
-    // Start sync process
+    // Start sync process with timeout
     const syncService = new XeroSyncService(connectionId, session.user.organizationId)
     
+    console.log('Starting Xero sync with entity types:', entityTypes)
     await syncService.syncAll({
       connectionId,
       organizationId: session.user.organizationId,
       entityTypes,
       initialSync,
     })
+    console.log('Xero sync completed successfully')
 
     // Transform to actual events
     const etlService = new XeroETLService(connectionId, session.user.organizationId)
     
+    console.log('Starting ETL transformation with basis:', basis)
     await etlService.transformToActualEvents({
       connectionId,
       organizationId: session.user.organizationId,
       basis,
     })
+    console.log('ETL transformation completed successfully')
 
     // Get sync statistics
     const syncLogs = await prisma.xeroSyncLog.findMany({

@@ -136,17 +136,24 @@ Please verify:
         },
         body: JSON.stringify({
           connectionId: xeroConnection.id,
-          entityTypes: ['accounts', 'tracking', 'contacts', 'invoices', 'bills', 'payments', 'bankTransactions'],
-          initialSync: false,
+          entityTypes: ['accounts', 'tracking', 'contacts'], // Start with just the essential data
+          initialSync: true, // This is actually an initial sync
           basis,
         }),
       })
+
+      if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error('Sync timed out. This can happen with large amounts of data. Try again or contact support.')
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
       const data = await response.json()
       
       if (data.success) {
         setSyncStatus(data.stats)
-        alert('Sync completed successfully!')
+        alert('Sync completed successfully! Your tracking categories and contacts are now available.')
         // Refresh the page to show updated data
         router.refresh()
       } else {
