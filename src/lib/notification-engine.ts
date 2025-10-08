@@ -1,7 +1,7 @@
 import { prisma } from './prisma'
 import { ForecastEngine } from './forecast-engine'
 import { ReconciliationEngine } from './reconciliation-engine'
-import { addDays, startOfWeek, endOfWeek, format } from 'date-fns'
+import { addDays, startOfWeek, endOfWeek, format, parseISO } from 'date-fns'
 
 export interface NotificationData {
   type: 'late_receipt' | 'upcoming_outflow' | 'negative_balance' | 'variance_threshold' | 'weekly_digest'
@@ -161,7 +161,7 @@ export class NotificationEngine {
         message: `Projected negative balance in ${negativePeriods.length} month(s)`,
         data: {
           negativePeriods: negativePeriods.map(p => ({
-            month: format(new Date(p.startDate), 'MMM yyyy'),
+            month: format(parseISO(p.startDate), 'MMM yyyy'),
             balance: p.balance,
             net: p.net,
           })),

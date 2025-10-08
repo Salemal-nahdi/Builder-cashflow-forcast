@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { addDays, addWeeks, addMonths, addQuarters, startOfMonth, endOfMonth, format } from 'date-fns'
+import { addDays, addWeeks, addMonths, addQuarters, startOfMonth, endOfMonth, format, parseISO } from 'date-fns'
 
 export interface CashEvent {
   id: string

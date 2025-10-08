@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 interface ForecastPeriod {
   startDate: string
@@ -136,7 +136,7 @@ export function ForecastActualsTable({ startDate, endDate, basis, scenarioId }: 
             <h2 className="text-lg font-semibold text-gray-900">Cashflow Forecast vs Actuals</h2>
             <p className="text-sm text-gray-600">
               {data.dateRange.startDate && data.dateRange.endDate ? 
-                `${format(new Date(data.dateRange.startDate), 'MMM dd, yyyy')} - ${format(new Date(data.dateRange.endDate), 'MMM dd, yyyy')}` :
+                `${format(parseISO(data.dateRange.startDate), 'MMM dd, yyyy')} - ${format(parseISO(data.dateRange.endDate), 'MMM dd, yyyy')}` :
                 'Invalid date range'
               }
             </p>
@@ -212,7 +212,7 @@ export function ForecastActualsTable({ startDate, endDate, basis, scenarioId }: 
               return (
                 <tr key={index} className={period.isHistorical ? 'bg-blue-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {period.startDate ? format(new Date(period.startDate), 'MMM yyyy') : 'Invalid Date'}
+                    {period.startDate ? format(parseISO(period.startDate), 'MMM yyyy') : 'Invalid Date'}
                     {period.isHistorical && (
                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                         Actual
