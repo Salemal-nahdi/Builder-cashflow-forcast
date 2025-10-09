@@ -14,20 +14,15 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('Auth attempt:', credentials?.email)
+        
         try {
           if (!credentials?.email || !credentials?.password) {
             console.log('Missing credentials')
             return null
           }
 
-          // Check database connection first
-          try {
-            await prisma.$queryRaw`SELECT 1`
-          } catch (dbError) {
-            console.error('Database connection failed during auth:', dbError)
-            throw new Error('Database connection failed. Please try again.')
-          }
-
+          console.log('Looking up user:', credentials.email)
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
             include: {
@@ -36,17 +31,24 @@ export const authOptions: NextAuthOptions = {
             },
           })
 
-          if (!user || !user.password) {
-            console.log('User not found or no password set')
+          if (!user) {
+            console.log('User not found:', credentials.email)
             return null
           }
 
+          if (!user.password) {
+            console.log('User has no password set:', credentials.email)
+            return null
+          }
+
+          console.log('Checking password for user:', user.email)
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
           if (!isPasswordValid) {
-            console.log('Invalid password')
+            console.log('Invalid password for user:', user.email)
             return null
           }
 
+          console.log('Authentication successful for user:', user.email)
           return {
             id: user.id,
             email: user.email,
@@ -55,10 +57,6 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           console.error('Auth error:', error)
-          // Don't return null for connection errors, let NextAuth handle it
-          if (error instanceof Error && error.message.includes('Database connection failed')) {
-            throw error
-          }
           return null
         }
       }
