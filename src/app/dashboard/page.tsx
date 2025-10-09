@@ -21,8 +21,10 @@ export default async function DashboardPage() {
     redirect('/auth/signin')
   }
 
-  // Get organization data
-  const organization = await prisma.organization.findUnique({
+  // Get organization data with error handling
+  let organization
+  try {
+    organization = await prisma.organization.findUnique({
     where: { id: organizationId },
     include: {
       projects: {
@@ -56,6 +58,28 @@ export default async function DashboardPage() {
       },
     },
   })
+  } catch (error) {
+    console.error('Database error in dashboard:', error)
+    // Return a basic dashboard with empty data
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Database Connection Error
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>Unable to load dashboard data. Please try refreshing the page or contact support if the issue persists.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!organization) {
     redirect('/auth/signin')
