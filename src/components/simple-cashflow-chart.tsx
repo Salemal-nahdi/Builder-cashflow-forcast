@@ -1,6 +1,6 @@
 'use client'
 
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 interface CashflowPeriod {
   date: Date
@@ -119,7 +119,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
                   textAnchor="middle"
                   className="text-xs fill-gray-600"
                 >
-                  {format(new Date(period.date), 'MMM')}
+                  {format(parseISO(period.date), 'MMM')}
                 </text>
 
                 {/* Balance value */}
@@ -181,7 +181,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
             {periodsWithBalance.map((period, index) => (
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-4 py-2 whitespace-nowrap text-gray-900">
-                  {format(new Date(period.date), 'MMM yyyy')}
+                  {format(parseISO(period.date), 'MMM yyyy')}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right text-green-600">
                   ${(period.income || 0).toLocaleString()}

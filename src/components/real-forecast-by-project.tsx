@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { format, startOfMonth, endOfMonth } from 'date-fns'
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import { useRouter } from 'next/navigation'
 
 interface RealForecastByProjectProps {
@@ -174,7 +174,7 @@ export function RealForecastByProject({
             </th>
             {forecastPeriods.map((period, index) => (
               <th key={index} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {format(new Date(period.startDate), 'MMM yyyy')}
+                {format(parseISO(period.startDate), 'MMM yyyy')}
               </th>
             ))}
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100">

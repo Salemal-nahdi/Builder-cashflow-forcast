@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import ReactECharts from 'echarts-for-react'
-import { format, startOfMonth, addMonths } from 'date-fns'
+import { format, startOfMonth, addMonths, parseISO } from 'date-fns'
 
 interface ForecastChartProps {
   organizationId: string
@@ -95,7 +95,7 @@ export function ForecastChart({ organizationId, scenarioId }: ForecastChartProps
         const data = period.data
         return `
           <div style="padding: 10px;">
-            <div style="font-weight: bold; margin-bottom: 5px;">${format(new Date(period.name), 'MMM yyyy')}</div>
+            <div style="font-weight: bold; margin-bottom: 5px;">${format(parseISO(period.name), 'MMM yyyy')}</div>
             <div style="color: #10B981;">Income: $${data.income.toLocaleString()}</div>
             <div style="color: #EF4444;">Outgo: $${data.outgo.toLocaleString()}</div>
             <div style="color: #3B82F6;">Net: $${data.net.toLocaleString()}</div>
