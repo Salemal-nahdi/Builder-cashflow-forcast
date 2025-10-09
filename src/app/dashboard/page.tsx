@@ -7,6 +7,9 @@ import { DashboardForecastWithDates } from '@/components/dashboard-forecast-with
 import { DashboardProjectEditCard } from '@/components/dashboard-project-edit-card'
 import { getOrganizationId } from '@/lib/get-org'
 
+// Force dynamic rendering - don't pre-render this page
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   // No authentication - just get the organization
   const organizationId = await getOrganizationId()
