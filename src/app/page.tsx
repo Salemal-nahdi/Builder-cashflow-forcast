@@ -15,16 +15,10 @@ export default function HomePage() {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link
-              href="/dashboard"
+              href="/demo"
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Start Using Now →
-            </Link>
-            <Link
-              href="/demo"
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold border border-blue-600 hover:bg-blue-50 transition-colors"
-            >
-              View Demo
             </Link>
           </div>
 

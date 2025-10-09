@@ -1,20 +1,13 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 import { XeroSettingsClient } from './xero-settings-client'
+import { getOrganizationId } from '@/lib/get-org'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 export default async function XeroSettingsPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session?.user) {
-    redirect('/auth/signin')
-  }
-
-  const organizationId = session.user.organizationId
-  if (!organizationId) {
-    redirect('/auth/signin')
-  }
+  // No authentication - just get the organization
+  const organizationId = await getOrganizationId()
 
   // Get Xero connection
   const xeroConnection = await prisma.xeroConnection.findFirst({

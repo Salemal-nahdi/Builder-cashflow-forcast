@@ -429,6 +429,12 @@ export default function DemoPage() {
             </div>
             <div className="flex items-center space-x-4">
               <Link
+                href="/settings/xero"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              >
+                Connect Xero
+              </Link>
+              <Link
                 href="/"
                 className="text-gray-600 hover:text-gray-900"
               >
