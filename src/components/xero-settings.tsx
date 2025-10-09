@@ -199,7 +199,7 @@ export function XeroSettings({ connection: initialConnection, projects, tracking
         <ol className="list-decimal list-inside space-y-1 text-blue-800 text-sm">
           <li>Connect to Xero using the button above</li>
           <li>Map your projects to Xero tracking categories</li>
-          <li>Click "Sync Now" to pull invoices and bills from Xero</li>
+          <li>Click &quot;Sync Now&quot; to pull invoices and bills from Xero</li>
           <li>Invoices become milestones (income)</li>
           <li>Bills become costs (expenses)</li>
           <li>View the updated forecast on the main page</li>
