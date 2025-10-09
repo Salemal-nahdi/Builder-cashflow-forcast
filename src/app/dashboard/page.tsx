@@ -1,25 +1,15 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ForecastEngine } from '@/lib/forecast-engine'
 import { addMonths } from 'date-fns'
 import { DashboardClient } from '@/components/dashboard-client'
 import { DashboardForecastWithDates } from '@/components/dashboard-forecast-with-dates'
 import { DashboardProjectEditCard } from '@/components/dashboard-project-edit-card'
+import { getOrganizationId } from '@/lib/get-org'
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session?.user) {
-    redirect('/auth/signin')
-  }
-
-  const organizationId = session.user.organizationId
-  if (!organizationId) {
-    redirect('/auth/signin')
-  }
+  // No authentication - just get the organization
+  const organizationId = await getOrganizationId()
 
   // Get organization data with error handling
   let organization
