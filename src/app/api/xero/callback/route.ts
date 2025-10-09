@@ -1,113 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { XeroOAuth } from '@/lib/xero/client'
+import { NextResponse } from 'next/server'
+import { exchangeCodeForTokens } from '@/lib/xero/client'
 import { prisma } from '@/lib/prisma'
+import { getOrganizationId } from '@/lib/get-org'
+import { XeroClient } from 'xero-node'
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic'
+
+// GET /api/xero/callback - Handle Xero OAuth callback
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const code = searchParams.get('code')
-    const state = searchParams.get('state')
-    const error = searchParams.get('error')
-    const errorDescription = searchParams.get('error_description')
+    const url = new URL(request.url)
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state')
+    const error = url.searchParams.get('error')
 
-    console.log('Xero callback received with params:', {
-      hasCode: !!code,
-      hasState: !!state,
-      error,
-      errorDescription,
-      allParams: Array.from(searchParams.entries())
-    })
-
+    // Check for OAuth error
     if (error) {
-      console.error('Xero OAuth error:', error, errorDescription)
-      const errorMsg = errorDescription || error
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=${encodeURIComponent(errorMsg)}`
+        `${url.origin}/settings/xero?error=oauth_error&message=${error}`
       )
     }
 
+    // Validate required params
     if (!code || !state) {
-      console.error('Missing OAuth parameters. Code:', !!code, 'State:', !!state)
-      console.error('This usually means the Xero redirect URI is misconfigured')
-      console.error('Expected redirect URI:', process.env.XERO_REDIRECT_URI)
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=missing_oauth_params`
-      )
-    }
-
-    // Decode and validate state
-    let stateData
-    try {
-      stateData = JSON.parse(Buffer.from(state, 'base64').toString())
-    } catch (error) {
-      console.error('Invalid state parameter:', error)
-      return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=invalid_state`
-      )
-    }
-
-    const { organizationId, userId } = stateData
-
-    if (!organizationId || !userId) {
-      return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/settings/xero?error=invalid_state`
+        `${url.origin}/settings/xero?error=missing_params`
       )
     }
 
     // Exchange code for tokens
-    const tokenData = await XeroOAuth.exchangeCodeForToken(code, state)
+    const tokens = await exchangeCodeForTokens(code, state)
 
-    // Check if connection already exists
-    const existingConnection = await prisma.xeroConnection.findFirst({
-      where: {
-        organizationId,
-        xeroTenantId: tokenData.tenantId,
-      },
+    // Get tenant ID
+    const xero = new XeroClient({
+      clientId: process.env.XERO_CLIENT_ID!,
+      clientSecret: process.env.XERO_CLIENT_SECRET!,
+      redirectUris: [process.env.XERO_REDIRECT_URI!]
     })
 
-    if (existingConnection) {
-      // Update existing connection
-      await prisma.xeroConnection.update({
-        where: { id: existingConnection.id },
-        data: {
-          accessToken: tokenData.accessToken,
-          refreshToken: tokenData.refreshToken,
-          tokenExpiresAt: new Date(Date.now() + (tokenData.expiresIn * 1000)),
-          xeroOrgName: tokenData.tenantName,
-          isActive: true,
-          lastSyncAt: null, // Reset sync status
-        },
-      })
-    } else {
-      // Create new connection
-      await prisma.xeroConnection.create({
-        data: {
-          organizationId,
-          xeroTenantId: tokenData.tenantId,
-          xeroOrgName: tokenData.tenantName,
-          accessToken: tokenData.accessToken,
-          refreshToken: tokenData.refreshToken,
-          tokenExpiresAt: new Date(Date.now() + (tokenData.expiresIn * 1000)),
-          scopes: [
-            'accounting.settings',
-            'accounting.contacts.read',
-            'accounting.transactions.read',
-            'projects.read',
-            'offline_access'
-          ].join(','),
-          isActive: true,
-        },
-      })
+    await xero.setTokenSet({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken
+    })
+
+    await xero.updateTenants()
+    const tenants = xero.tenants
+    
+    if (!tenants || tenants.length === 0) {
+      return NextResponse.redirect(
+        `${url.origin}/settings/xero?error=no_tenant`
+      )
     }
 
-    // Redirect to settings page with success
+    const tenantId = tenants[0].tenantId
+
+    // Get organization
+    const organizationId = await getOrganizationId()
+
+    // Deactivate existing connections
+    await prisma.xeroConnection.updateMany({
+      where: { organizationId },
+      data: { isActive: false }
+    })
+
+    // Create new connection
+    await prisma.xeroConnection.create({
+      data: {
+        organizationId,
+        tenantId,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt,
+        isActive: true
+      }
+    })
+
+    // Redirect to settings with success
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/settings/xero?success=true`
+      `${url.origin}/settings/xero?success=true`
     )
-  } catch (error) {
-    console.error('Error in Xero OAuth callback:', error)
+  } catch (error: any) {
+    console.error('Xero callback error:', error)
+    const url = new URL(request.url)
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/settings/xero?error=connection_failed`
+      `${url.origin}/settings/xero?error=connection_failed&message=${encodeURIComponent(error.message)}`
     )
   }
 }
+

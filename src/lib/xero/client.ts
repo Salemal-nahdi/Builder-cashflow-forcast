@@ -1,373 +1,101 @@
 import { XeroClient } from 'xero-node'
-import { prisma } from '../prisma'
 
-export interface XeroConfig {
-  clientId: string
-  clientSecret: string
-  redirectUri: string
-  scopes: string[]
+const CLIENT_ID = process.env.XERO_CLIENT_ID!
+const CLIENT_SECRET = process.env.XERO_CLIENT_SECRET!
+const REDIRECT_URI = process.env.XERO_REDIRECT_URI!
+
+/**
+ * Generate Xero OAuth authorization URL
+ */
+export async function getXeroAuthUrl(state: string): Promise<string> {
+  const xero = new XeroClient({
+    clientId: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    redirectUris: [REDIRECT_URI],
+    scopes: [
+      'openid',
+      'profile',
+      'email',
+      'accounting.transactions.read',
+      'accounting.contacts.read',
+      'accounting.settings.read'
+    ].join(' '),
+    state: state
+  })
+
+  return await xero.buildConsentUrl()
 }
 
-export class XeroApiClient {
-  private client: XeroClient
-  private connectionId: string
-  private organizationId: string
-  private tenantId: string = ''
+/**
+ * Exchange authorization code for tokens
+ */
+export async function exchangeCodeForTokens(code: string, state: string) {
+  const xero = new XeroClient({
+    clientId: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    redirectUris: [REDIRECT_URI],
+    scopes: [
+      'openid',
+      'profile',
+      'email',
+      'accounting.transactions.read',
+      'accounting.contacts.read',
+      'accounting.settings.read'
+    ].join(' '),
+    state: state
+  })
 
-  constructor(connectionId: string, organizationId: string) {
-    this.connectionId = connectionId
-    this.organizationId = organizationId
-    
-    this.client = new XeroClient({
-      clientId: process.env.XERO_CLIENT_ID!,
-      clientSecret: process.env.XERO_CLIENT_SECRET!,
-      redirectUris: [process.env.XERO_REDIRECT_URI!],
-      scopes: [
-        'accounting.settings',
-        'accounting.contacts.read',
-        'accounting.transactions.read',
-        'projects.read',
-        'offline_access'
-      ],
-    })
-  }
+  const callbackUrl = `${REDIRECT_URI}?code=${code}&state=${state}`
+  const tokenSet = await xero.apiCallback(callbackUrl)
 
-  async initialize(): Promise<void> {
-    const connection = await prisma.xeroConnection.findUnique({
-      where: { id: this.connectionId },
-    })
-
-    if (!connection) {
-      throw new Error('Xero connection not found')
-    }
-
-    if (!connection.isActive) {
-      throw new Error('Xero connection is not active')
-    }
-
-    // Check if token needs refresh
-    if (connection.tokenExpiresAt <= new Date()) {
-      await this.refreshToken(connection)
-    }
-
-    // Set token for the client
-    await this.client.setTokenSet({
-      access_token: connection.accessToken,
-      refresh_token: connection.refreshToken,
-      token_type: 'Bearer',
-    })
-    
-    // Store tenant ID
-    this.tenantId = connection.xeroTenantId
-  }
-
-  private async refreshToken(connection: any): Promise<void> {
-    try {
-      const tokenSet = await this.client.refreshToken()
-      
-      await prisma.xeroConnection.update({
-        where: { id: this.connectionId },
-        data: {
-          accessToken: tokenSet.access_token!,
-          refreshToken: tokenSet.refresh_token!,
-          tokenExpiresAt: new Date(Date.now() + (tokenSet.expires_in! * 1000)),
-        },
-      })
-    } catch (error) {
-      console.error('Failed to refresh Xero token:', error)
-      
-      // Mark connection as inactive
-      await prisma.xeroConnection.update({
-        where: { id: this.connectionId },
-        data: { isActive: false },
-      })
-      
-      throw new Error('Failed to refresh Xero token')
-    }
-  }
-
-  async getAccounts(): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getAccounts(this.tenantId)
-      return response.body.accounts || []
-    } catch (error) {
-      console.error('Error fetching accounts:', error)
-      throw error
-    }
-  }
-
-  async getTrackingCategories(): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getTrackingCategories(this.tenantId)
-      return response.body.trackingCategories || []
-    } catch (error) {
-      console.error('Error fetching tracking categories:', error)
-      throw error
-    }
-  }
-
-  async getContacts(): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getContacts(this.tenantId)
-      return response.body.contacts || []
-    } catch (error) {
-      console.error('Error fetching contacts:', error)
-      throw error
-    }
-  }
-
-  async getInvoices(modifiedSince?: Date): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getInvoices(
-        this.tenantId,
-        undefined, // ifModifiedSince
-        undefined, // where
-        undefined, // order
-        undefined, // IDs
-        undefined, // invoiceNumbers
-        undefined, // contactIDs
-        undefined, // statuses
-        undefined, // page
-        undefined, // includeArchived
-        undefined, // createdByMyApp
-        undefined, // unitdp
-        undefined, // summaryOnly
-        undefined, // searchTerm
-        modifiedSince?.toISOString()
-      )
-      return response.body.invoices || []
-    } catch (error) {
-      console.error('Error fetching invoices:', error)
-      throw error
-    }
-  }
-
-  async getBills(modifiedSince?: Date): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getInvoices(
-        this.tenantId,
-        undefined, // ifModifiedSince
-        'Type=="ACCPAY"', // where - filter for bills (accounts payable)
-        undefined, // order
-        undefined, // IDs
-        undefined, // invoiceNumbers
-        undefined, // contactIDs
-        undefined, // statuses
-        undefined, // page
-        undefined, // includeArchived
-        undefined, // createdByMyApp
-        undefined, // unitdp
-        undefined, // summaryOnly
-        undefined, // searchTerm
-        modifiedSince?.toISOString()
-      )
-      return response.body.invoices || []
-    } catch (error) {
-      console.error('Error fetching bills:', error)
-      throw error
-    }
-  }
-
-  async getPayments(modifiedSince?: Date): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getPayments(
-        this.tenantId,
-        modifiedSince,
-        undefined, // where
-        undefined, // order
-      )
-      return response.body.payments || []
-    } catch (error) {
-      console.error('Error fetching payments:', error)
-      throw error
-    }
-  }
-
-  async getBankTransactions(modifiedSince?: Date): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getBankTransactions(
-        this.tenantId,
-        modifiedSince,
-        undefined, // where
-        undefined, // order
-      )
-      return response.body.bankTransactions || []
-    } catch (error) {
-      console.error('Error fetching bank transactions:', error)
-      throw error
-    }
-  }
-
-  async getItems(): Promise<any[]> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.getItems(this.tenantId)
-      return response.body.items || []
-    } catch (error) {
-      console.error('Error fetching items:', error)
-      throw error
-    }
-  }
-
-  async createDraftInvoice(invoiceData: any): Promise<any> {
-    await this.initialize()
-    
-    try {
-      const response = await this.client.accountingApi.createInvoices(
-        this.tenantId,
-        { invoices: [invoiceData] }
-      )
-      return response.body.invoices?.[0]
-    } catch (error) {
-      console.error('Error creating draft invoice:', error)
-      throw error
-    }
-  }
-
-  // Rate limiting and retry logic
-  private async withRetry<T>(
-    operation: () => Promise<T>,
-    maxRetries: number = 3,
-    baseDelay: number = 1000
-  ): Promise<T> {
-    let lastError: Error
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await operation()
-      } catch (error: any) {
-        lastError = error
-        
-        // Check if it's a rate limit error
-        if (error.status === 429 || error.statusCode === 429) {
-          const retryAfter = error.headers?.['retry-after'] || attempt + 1
-          const delay = parseInt(retryAfter) * 1000
-          
-          if (attempt < maxRetries) {
-            console.log(`Rate limited, retrying after ${delay}ms...`)
-            await new Promise(resolve => setTimeout(resolve, delay))
-            continue
-          }
-        }
-        
-        // For other errors, don't retry
-        throw error
-      }
-    }
-    
-    throw lastError!
-  }
-
-  // Helper method to handle pagination
-  async getAllPages<T>(
-    fetchPage: (page: number) => Promise<{ items: T[], hasMore: boolean }>
-  ): Promise<T[]> {
-    const allItems: T[] = []
-    let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-      const result = await this.withRetry(() => fetchPage(page))
-      allItems.push(...result.items)
-      hasMore = result.hasMore
-      page++
-    }
-
-    return allItems
+  return {
+    accessToken: tokenSet.access_token!,
+    refreshToken: tokenSet.refresh_token!,
+    expiresAt: new Date(Date.now() + tokenSet.expires_in! * 1000)
   }
 }
 
-// Static methods for OAuth flow
-export class XeroOAuth {
-  static async getAuthUrl(state: string): Promise<string> {
-    // Validate environment variables
-    if (!process.env.XERO_CLIENT_ID) {
-      throw new Error('XERO_CLIENT_ID environment variable is not set')
-    }
-    if (!process.env.XERO_CLIENT_SECRET) {
-      throw new Error('XERO_CLIENT_SECRET environment variable is not set')
-    }
-    if (!process.env.XERO_REDIRECT_URI) {
-      throw new Error('XERO_REDIRECT_URI environment variable is not set')
-    }
+/**
+ * Get authenticated Xero client
+ */
+export async function getXeroClient(accessToken: string, refreshToken: string, tenantId: string) {
+  const xero = new XeroClient({
+    clientId: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    redirectUris: [REDIRECT_URI]
+  })
 
-    const client = new XeroClient({
-      clientId: process.env.XERO_CLIENT_ID,
-      clientSecret: process.env.XERO_CLIENT_SECRET,
-      redirectUris: [process.env.XERO_REDIRECT_URI],
-      scopes: [
-        'accounting.settings',
-        'accounting.contacts.read',
-        'accounting.transactions.read',
-        'projects.read',
-        'offline_access'
-      ],
-      state: state, // Pass the state parameter to the client
-    })
+  await xero.setTokenSet({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    token_type: 'Bearer'
+  })
 
-    // Build the consent URL - the state is now included via the client config
-    return client.buildConsentUrl()
-  }
+  await xero.updateTenants()
 
-  static async exchangeCodeForToken(
-    code: string,
-    state: string
-  ): Promise<{
-    accessToken: string
-    refreshToken: string
-    expiresIn: number
-    tenantId: string
-    tenantName: string
-  }> {
-    const client = new XeroClient({
-      clientId: process.env.XERO_CLIENT_ID!,
-      clientSecret: process.env.XERO_CLIENT_SECRET!,
-      redirectUris: [process.env.XERO_REDIRECT_URI!],
-      scopes: [
-        'accounting.settings',
-        'accounting.contacts.read',
-        'accounting.transactions.read',
-        'projects.read',
-        'offline_access'
-      ],
-      state: state, // Set the state in the client for validation
-    })
+  return { xero, tenantId }
+}
 
-    // Build the callback URL with the code and state parameters
-    const callbackUrl = `${process.env.XERO_REDIRECT_URI}?code=${code}&state=${state}`
-    const tokenSet = await client.apiCallback(callbackUrl)
-    
-    // Get tenant information
-    await client.updateTenants()
-    const tenants = client.tenants
-    
-    if (!tenants || tenants.length === 0) {
-      throw new Error('No Xero tenants found')
-    }
-    
-    const tenant = tenants[0] // Use the first tenant
+/**
+ * Refresh Xero access token
+ */
+export async function refreshXeroToken(refreshToken: string) {
+  const xero = new XeroClient({
+    clientId: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    redirectUris: [REDIRECT_URI]
+  })
 
-    return {
-      accessToken: tokenSet.access_token!,
-      refreshToken: tokenSet.refresh_token!,
-      expiresIn: tokenSet.expires_in!,
-      tenantId: tenant.tenantId,
-      tenantName: tenant.tenantName,
-    }
+  await xero.setTokenSet({
+    refresh_token: refreshToken
+  })
+
+  const newTokenSet = await xero.refreshToken()
+
+  return {
+    accessToken: newTokenSet.access_token!,
+    refreshToken: newTokenSet.refresh_token!,
+    expiresAt: new Date(Date.now() + newTokenSet.expires_in! * 1000)
   }
 }
+

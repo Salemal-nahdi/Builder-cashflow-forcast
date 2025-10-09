@@ -1,64 +1,87 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
+// POST /api/projects/[id]/milestones - Add milestone
 export async function POST(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.organizationId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const projectId = params.id
     const body = await request.json()
 
-    // Verify project belongs to user's organization
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        organizationId: session.user.organizationId
-      }
-    })
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
-
-    // Create milestone and associated cash event
     const milestone = await prisma.milestone.create({
       data: {
-        projectId,
+        projectId: params.id,
         name: body.name,
+        amount: body.amount,
         expectedDate: new Date(body.expectedDate),
-        contractValue: body.amount, // This is the full contract value for this milestone
-        amount: body.amount, // This is also the amount to receive
-        status: 'pending'
+        status: body.status || 'pending'
       }
     })
 
-    // Create corresponding income cash event
-    await prisma.cashEvent.create({
+    return NextResponse.json(milestone, { status: 201 })
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/projects/[id]/milestones/[milestoneId] - Update milestone
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json()
+    const { milestoneId, ...data } = body
+
+    const milestone = await prisma.milestone.update({
+      where: { id: milestoneId },
       data: {
-        organizationId: session.user.organizationId,
-        projectId,
-        type: 'income',
-        amount: body.amount,
-        scheduledDate: new Date(body.expectedDate),
-        sourceType: 'milestone',
-        sourceId: milestone.id
+        name: data.name,
+        amount: data.amount,
+        expectedDate: data.expectedDate ? new Date(data.expectedDate) : undefined,
+        status: data.status
       }
     })
 
     return NextResponse.json(milestone)
-  } catch (error) {
-    console.error('Error creating milestone:', error)
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Failed to create milestone' },
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/projects/[id]/milestones/[milestoneId]
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const url = new URL(request.url)
+    const milestoneId = url.searchParams.get('milestoneId')
+
+    if (!milestoneId) {
+      return NextResponse.json(
+        { error: 'Milestone ID required' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.milestone.delete({
+      where: { id: milestoneId }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
       { status: 500 }
     )
   }

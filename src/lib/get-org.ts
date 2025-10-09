@@ -1,16 +1,21 @@
 import { prisma } from './prisma'
 
+/**
+ * Get or create the default organization
+ * Keeps things simple - one org per deployment
+ */
 export async function getOrganizationId(): Promise<string> {
-  let org = await prisma.organization.findFirst()
+  let organization = await prisma.organization.findFirst()
   
-  if (!org) {
-    org = await prisma.organization.create({
+  if (!organization) {
+    organization = await prisma.organization.create({
       data: {
         name: 'My Company',
-        settings: {}
+        startingBalance: 100000 // Default $100k starting balance
       }
     })
   }
   
-  return org.id
+  return organization.id
 }
+

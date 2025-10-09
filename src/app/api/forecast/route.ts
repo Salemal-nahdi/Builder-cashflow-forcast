@@ -1,53 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 import { ForecastEngine } from '@/lib/forecast-engine'
+import { getOrganizationId } from '@/lib/get-org'
+import { prisma } from '@/lib/prisma'
+import { addMonths } from 'date-fns'
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic'
+
+// GET /api/forecast - Get cashflow forecast
+export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.organizationId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const url = new URL(request.url)
+    const monthsParam = url.searchParams.get('months')
+    const months = monthsParam ? parseInt(monthsParam) : 6
 
-    const organizationId = session.user.organizationId
-    const { searchParams } = new URL(request.url)
-    
-    const startDate = searchParams.get('startDate') 
-      ? new Date(searchParams.get('startDate')!) 
-      : new Date()
-    
-    const endDate = searchParams.get('endDate')
-      ? new Date(searchParams.get('endDate')!)
-      : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000) // 6 months default
+    const organizationId = await getOrganizationId()
 
-    // Generate forecast
-    const forecastEngine = new ForecastEngine(organizationId, startDate, endDate)
-    const periods = await forecastEngine.generateForecast('monthly')
-
-    // Get projects
-    const projects = await prisma.project.findMany({
-      where: { organizationId },
-      include: {
-        milestones: {
-          where: { status: { in: ['pending', 'invoiced'] } },
-          orderBy: { expectedDate: 'asc' },
-        },
-        supplierClaims: {
-          where: { status: { in: ['pending', 'invoiced'] } },
-          orderBy: { expectedDate: 'asc' },
-        },
-      },
-      orderBy: { name: 'asc' },
+    // Get organization with starting balance
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId }
     })
 
-    return NextResponse.json({ periods, projects })
-  } catch (error) {
-    console.error('Error generating forecast:', error)
+    if (!organization) {
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      )
+    }
+
+    // Calculate forecast for next X months
+    const startDate = new Date()
+    startDate.setDate(1) // Start of current month
+    const endDate = addMonths(startDate, months)
+
+    const engine = new ForecastEngine(
+      organizationId,
+      startDate,
+      endDate,
+      Number(organization.startingBalance)
+    )
+
+    const forecast = await engine.calculateForecast()
+
+    return NextResponse.json(forecast)
+  } catch (error: any) {
+    console.error('Forecast API error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate forecast' },
+      { error: error.message },
       { status: 500 }
     )
   }

@@ -1,56 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { XeroOAuth } from '@/lib/xero/client'
+import { NextResponse } from 'next/server'
+import { getXeroAuthUrl } from '@/lib/xero/client'
 import { randomBytes } from 'crypto'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.organizationId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const dynamic = 'force-dynamic'
 
-    // Validate Xero environment variables
+// GET /api/xero/connect - Initiate Xero OAuth
+export async function GET() {
+  try {
+    // Validate environment variables
     if (!process.env.XERO_CLIENT_ID || !process.env.XERO_CLIENT_SECRET || !process.env.XERO_REDIRECT_URI) {
-      console.error('Xero environment variables not configured:', {
-        hasClientId: !!process.env.XERO_CLIENT_ID,
-        hasClientSecret: !!process.env.XERO_CLIENT_SECRET,
-        hasRedirectUri: !!process.env.XERO_REDIRECT_URI,
-      })
       return NextResponse.json(
-        { error: 'Xero integration not configured. Please check environment variables.' },
+        { error: 'Xero credentials not configured' },
         { status: 500 }
       )
     }
 
-    // Generate state parameter for security
-    const state = randomBytes(32).toString('hex')
-    
-    // Store state in session or database for validation
-    // For now, we'll include organizationId in the state
-    const stateData = {
-      organizationId: session.user.organizationId,
-      userId: session.user.id,
-      nonce: state,
-    }
-    
-    const encodedState = Buffer.from(JSON.stringify(stateData)).toString('base64')
-    
+    // Generate state for OAuth
+    const state = randomBytes(16).toString('hex')
+
     // Get authorization URL
-    const authUrl = await XeroOAuth.getAuthUrl(encodedState)
-    
-    return NextResponse.json({
-      authUrl,
-      state: encodedState,
+    const authUrl = await getXeroAuthUrl(state)
+
+    // Store state in cookie for validation
+    const response = NextResponse.redirect(authUrl)
+    response.cookies.set('xero_oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 600 // 10 minutes
     })
-  } catch (error) {
-    console.error('Error initiating Xero OAuth:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to initiate Xero connection'
+
+    return response
+  } catch (error: any) {
+    console.error('Xero connect error:', error)
     return NextResponse.json(
-      { error: errorMessage },
+      { error: error.message },
       { status: 500 }
     )
   }
 }
+

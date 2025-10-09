@@ -1,63 +1,89 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
+// POST /api/projects/[id]/costs - Add cost
 export async function POST(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.organizationId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const projectId = params.id
     const body = await request.json()
 
-    // Verify project belongs to user's organization
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        organizationId: session.user.organizationId
+    const cost = await prisma.cost.create({
+      data: {
+        projectId: params.id,
+        description: body.description,
+        amount: body.amount,
+        expectedDate: new Date(body.expectedDate),
+        vendor: body.vendor,
+        status: body.status || 'pending'
       }
     })
 
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    return NextResponse.json(cost, { status: 201 })
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/projects/[id]/costs/[costId] - Update cost
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json()
+    const { costId, ...data } = body
+
+    const cost = await prisma.cost.update({
+      where: { id: costId },
+      data: {
+        description: data.description,
+        amount: data.amount,
+        expectedDate: data.expectedDate ? new Date(data.expectedDate) : undefined,
+        vendor: data.vendor,
+        status: data.status
+      }
+    })
+
+    return NextResponse.json(cost)
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/projects/[id]/costs/[costId]
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const url = new URL(request.url)
+    const costId = url.searchParams.get('costId')
+
+    if (!costId) {
+      return NextResponse.json(
+        { error: 'Cost ID required' },
+        { status: 400 }
+      )
     }
 
-    // Create supplier claim and associated cash event
-    const supplierClaim = await prisma.supplierClaim.create({
-      data: {
-        projectId,
-        supplierName: body.supplierName,
-        expectedDate: new Date(body.expectedDate),
-        amount: body.amount,
-        status: 'pending'
-      }
+    await prisma.cost.delete({
+      where: { id: costId }
     })
 
-    // Create corresponding outgo cash event
-    await prisma.cashEvent.create({
-      data: {
-        organizationId: session.user.organizationId,
-        projectId,
-        type: 'outgo',
-        amount: body.amount,
-        scheduledDate: new Date(body.expectedDate),
-        sourceType: 'supplier_claim',
-        sourceId: supplierClaim.id
-      }
-    })
-
-    return NextResponse.json(supplierClaim)
-  } catch (error) {
-    console.error('Error creating cost:', error)
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Failed to create cost' },
+      { error: error.message },
       { status: 500 }
     )
   }

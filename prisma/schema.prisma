@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,761 +7,128 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Auth models (NextAuth)
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // For credentials login
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Custom fields
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  roleAssignments RoleAssignment[]
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// Core business models
+// 1. Organization - one per deployment
 model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users           User[]
-  xeroConnections XeroConnection[]
-  projects        Project[]
-  projectGroups   ProjectGroup[]
-  forecastLines   ForecastLine[]
-  scenarios       Scenario[]
-  notifications   Notification[]
-  settings        OrganizationSettings?
-  actualEvents    ActualEvent[]
-}
-
-
-model Project {
-  id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  id             String          @id @default(cuid())
   name           String
-  description    String?
-  
-  // Xero mapping
-  xeroProjectId  String?  // If using Xero Projects
-  trackingCategoryId String? // If using tracking categories
-  trackingOptionId   String? // Specific tracking option
-  
-  // Project details
-  contractValue  Decimal? @db.Decimal(15, 2)
-  startDate      DateTime?
-  endDate        DateTime?
-  status         String   @default("active") // active, completed, on_hold, cancelled
-  
-  // Retention settings
-  retentionPercentage Decimal? @db.Decimal(5, 2) // Default 5%
-  retentionReleaseDays Int? // Default 84 days (12 weeks)
-  
-  projectGroupId String?
-  projectGroup   ProjectGroup? @relation(fields: [projectGroupId], references: [id])
-  
-  milestones     Milestone[]
-  supplierClaims SupplierClaim[]
-  materialOrders MaterialOrder[]
-  cashEvents     CashEvent[]
-  varianceMatches VarianceMatch[]
-  forecastLines  ForecastLine[]
-  actualEvents   ActualEvent[]
-  
-  // Xero mapping relations
-  xeroTrackingMaps ProjectXeroTrackingMap[]
-  xeroContactMap   ProjectXeroContactMap?
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model ProjectGroup {
-  id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  name           String
-  description    String?
-  color          String? // Hex color for UI
+  startingBalance Decimal        @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   
   projects       Project[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  xeroConnection XeroConnection?
 }
 
-model ForecastLine {
-  id             String   @id @default(cuid())
+// 2. Project - construction projects
+model Project {
+  id             String    @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
   name           String
-  description    String?
-  type           String   // income, outgo
-  frequency      String   // once, weekly, monthly, quarterly
-  
-  // Amount and escalation
-  baseAmount     Decimal  @db.Decimal(15, 2)
-  inflationRate  Decimal? @db.Decimal(5, 4) // Annual inflation rate
-  escalationRate Decimal? @db.Decimal(5, 4) // Annual escalation rate
-  
-  // Allocation
-  projectId      String?
-  project        Project? @relation(fields: [projectId], references: [id])
-  isOverhead     Boolean  @default(false)
-  
-  // Scheduling
+  contractValue  Decimal
   startDate      DateTime
-  endDate        DateTime?
-  nextDueDate    DateTime?
+  endDate        DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   
-  // Vendor/contact info
-  vendorName     String?
-  vendorContact  String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  milestones     Milestone[]
+  costs          Cost[]
+  xeroMaps       XeroProjectMap[]
   
-  // cashEvents     CashEvent[] // Commented out to fix schema validation
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@index([organizationId])
 }
 
+// 3. Milestone - payment stages (income)
 model Milestone {
   id             String   @id @default(cuid())
   projectId      String
+  name           String
+  amount         Decimal
+  expectedDate   DateTime
+  status         String   @default("pending") // pending, invoiced, paid
+  xeroInvoiceId  String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  name           String
-  description    String?
-  
-  // Payment details
-  contractValue  Decimal  @db.Decimal(15, 2)
-  percentage     Decimal? @db.Decimal(5, 2) // Percentage of contract
-  amount         Decimal? @db.Decimal(15, 2) // Fixed amount (if not percentage)
-  
-  // Scheduling
-  expectedDate   DateTime
-  actualDate     DateTime?
-  
-  // Retention
-  retentionAmount Decimal? @db.Decimal(15, 2)
-  retentionReleaseDate DateTime?
-  
-  // Status
-  status         String   @default("pending") // pending, invoiced, paid, overdue
-  
-  // Xero mapping
-  xeroInvoiceId  String?
-  
-  // cashEvents     CashEvent[] // Commented out to fix schema validation
-  // varianceMatches VarianceMatch[] // Commented out to fix schema validation
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@index([projectId])
+  @@index([expectedDate])
 }
 
-model SupplierClaim {
-  id             String   @id @default(cuid())
-  projectId      String
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+// 4. Cost - expenses/supplier claims
+model Cost {
+  id           String   @id @default(cuid())
+  projectId    String
+  description  String
+  amount       Decimal
+  expectedDate DateTime
+  vendor       String?
+  status       String   @default("pending") // pending, billed, paid
+  xeroBillId   String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
-  supplierName   String
-  description    String?
-  amount         Decimal  @db.Decimal(15, 2)
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  // Scheduling
-  expectedDate   DateTime
-  actualDate     DateTime?
-  
-  // Status
-  status         String   @default("pending") // pending, invoiced, paid, overdue
-  
-  // Xero mapping
-  xeroBillId     String?
-  
-  // cashEvents     CashEvent[] // Commented out to fix schema validation
-  // varianceMatches VarianceMatch[] // Commented out to fix schema validation
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@index([projectId])
+  @@index([expectedDate])
 }
 
-model MaterialOrder {
-  id             String   @id @default(cuid())
-  projectId      String
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  supplierName   String
-  description    String?
-  amount         Decimal  @db.Decimal(15, 2)
-  
-  // Scheduling
-  expectedDate   DateTime
-  actualDate     DateTime?
-  
-  // Status
-  status         String   @default("pending") // pending, ordered, received, paid, overdue
-  
-  // Xero mapping
-  xeroBillId     String?
-  
-  // cashEvents     CashEvent[] // Commented out to fix schema validation
-  // varianceMatches VarianceMatch[] // Commented out to fix schema validation
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model Scenario {
-  id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  name           String
-  description    String?
-  isBase         Boolean  @default(false) // Base scenario for comparison
-  
-  scenarioShifts ScenarioShift[]
-  cashEvents     CashEvent[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model ScenarioShift {
-  id             String   @id @default(cuid())
-  scenarioId     String
-  scenario       Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-  
-  // What to shift
-  entityType     String   // milestone, supplier_claim, material_order, forecast_line
-  entityId       String
-  
-  // Shift details
-  daysShift      Int      // Positive = delay, negative = accelerate
-  amountShift    Decimal? @db.Decimal(15, 2) // Optional amount adjustment
-  
-  createdAt      DateTime @default(now())
-}
-
-model CashEvent {
-  id             String   @id @default(cuid())
-  organizationId String
-  
-  // Event details
-  type           String   // income, outgo
-  amount         Decimal  @db.Decimal(15, 2)
-  scheduledDate  DateTime
-  actualDate     DateTime?
-  
-  // Source tracking
-  sourceType     String   // milestone, supplier_claim, material_order, forecast_line
-  sourceId       String
-  
-  // Source relations are handled via sourceType and sourceId fields
-  
-  // Project allocation
-  projectId      String?
-  project        Project? @relation(fields: [projectId], references: [id])
-  
-  // Scenario
-  scenarioId     String?
-  scenario       Scenario? @relation(fields: [scenarioId], references: [id])
-  
-  // Status
-  status         String   @default("scheduled") // scheduled, actual, cancelled
-  
-  varianceMatches VarianceMatch[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model BalanceSnapshot {
-  id             String   @id @default(cuid())
-  organizationId String
-  
-  date           DateTime
-  balance        Decimal  @db.Decimal(15, 2)
-  
-  // Breakdown
-  income         Decimal  @db.Decimal(15, 2)
-  outgo          Decimal  @db.Decimal(15, 2)
-  
-  // Scenario
-  scenarioId     String?
-  
-  createdAt      DateTime @default(now())
-}
-
-model VarianceMatch {
-  id             String   @id @default(cuid())
-  organizationId String
-  
-  // Forecast side
-  cashEventId    String
-  cashEvent      CashEvent @relation(fields: [cashEventId], references: [id])
-  
-  // Actual side (Xero data)
-  xeroTransactionId String
-  xeroTransactionType String // invoice, bill, payment
-  
-  // Variance details
-  amountVariance Decimal  @db.Decimal(15, 2) // actual - forecast
-  timingVariance Int      // days difference
-  confidenceScore Decimal @db.Decimal(3, 2) // 0.00 to 1.00
-  
-  // Status
-  status         String   @default("matched") // matched, disputed, resolved
-  
-  // Project context
-  projectId      String?
-  project        Project? @relation(fields: [projectId], references: [id])
-  
-  // Actual event relation
-  actualEventId  String?
-  actualEvent    ActualEvent? @relation(fields: [actualEventId], references: [id])
-  
-  // Source relations are handled via sourceType and sourceId fields
-  sourceId       String? // ID of the source entity
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model NotificationRule {
-  id             String   @id @default(cuid())
-  organizationId String
-  
-  name           String
-  description    String?
-  
-  // Trigger conditions
-  triggerType    String   // late_receipt, upcoming_outflow, negative_balance, variance_threshold
-  conditions     Json     // Flexible conditions object
-  
-  // Notification settings
-  emailEnabled   Boolean  @default(true)
-  emailTemplate  String?
-  
-  // Status
-  isActive       Boolean  @default(true)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model Notification {
-  id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  type           String   // alert, digest, report
-  title          String
-  message        String
-  data           Json?    // Additional context data
-  
-  // Delivery
-  emailSent      Boolean  @default(false)
-  emailSentAt    DateTime?
-  
-  // Status
-  status         String   @default("pending") // pending, sent, failed
-  
-  createdAt      DateTime @default(now())
-}
-
-model ReportJob {
-  id             String   @id @default(cuid())
-  organizationId String
-  
-  type           String   // csv, pdf
-  format         String   // forecast, variance, consolidated
-  parameters     Json     // Report parameters
-  
-  // Status
-  status         String   @default("pending") // pending, processing, completed, failed
-  fileUrl        String?
-  errorMessage   String?
-  
-  createdAt      DateTime @default(now())
-  completedAt    DateTime?
-}
-
-model OrganizationSettings {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Branding
-  logoUrl        String?
-  primaryColor   String?  // Hex color
-  secondaryColor String?  // Hex color
-  
-  // Defaults
-  defaultRetentionPercentage Decimal? @db.Decimal(5, 2)
-  defaultRetentionReleaseDays Int?
-  defaultForecastMonths      Int?     @default(24)
-  
-  // Accounting basis
-  defaultAccountingBasis String? @default("accrual") // cash, accrual
-  
-  // Notifications
-  digestFrequency String?  @default("weekly") // daily, weekly, monthly
-  digestDay       Int?     @default(1) // 1 = Monday
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model RoleAssignment {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  role           String   // pm, finance, management
-  projectId      String?  // Optional: restrict to specific project
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-// Xero Integration Models
-
+// 5. Xero Connection - OAuth tokens
 model XeroConnection {
   id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Xero tenant info
-  xeroTenantId   String   @unique
-  xeroOrgName    String
-  xeroOrgShortCode String?
-  
-  // OAuth tokens (encrypted)
-  accessToken    String   @db.Text
-  refreshToken   String   @db.Text
-  tokenExpiresAt DateTime
-  
-  // Scopes
-  scopes         String   // Comma-separated list
-  
-  // Status
+  organizationId String   @unique
+  tenantId       String
+  accessToken    String
+  refreshToken   String
+  expiresAt      DateTime
   isActive       Boolean  @default(true)
   lastSyncAt     DateTime?
-  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
-  // Relations
-  trackingCategories XeroTrackingCategory[]
-  accounts          XeroAccount[]
-  contacts          XeroContact[]
-  invoices          XeroInvoice[]
-  bills             XeroBill[]
-  payments          XeroPayment[]
-  bankTransactions  XeroBankTransaction[]
-  syncLogs          XeroSyncLog[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
+// 6. Xero Tracking Category (for mapping projects)
 model XeroTrackingCategory {
   id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
+  organizationId String
+  xeroId         String
   name           String
-  status         String   // ACTIVE, ARCHIVED
+  status         String
+  createdAt      DateTime @default(now())
   
   options        XeroTrackingOption[]
   
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@unique([organizationId, xeroId])
 }
 
+// 7. Xero Tracking Option (values within categories)
 model XeroTrackingOption {
-  id             String   @id @default(cuid())
-  categoryId     String
-  category       XeroTrackingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  categoryId String
+  xeroId     String
+  name       String
+  status     String
+  createdAt  DateTime @default(now())
   
-  xeroId         String   @unique
-  name           String
-  status         String   // ACTIVE, ARCHIVED
+  category   XeroTrackingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  projectMaps XeroProjectMap[]
   
-  // Relations
-  projectMappings ProjectXeroTrackingMap[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  @@unique([categoryId, xeroId])
 }
 
-model XeroAccount {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  code           String?  // Optional - not all accounts have codes
-  name           String
-  type           String   // REVENUE, EXPENSE, ASSET, LIABILITY, EQUITY, etc.
-  class          String?  // TRADING, PROFITANDLOSS, BALANCESHEET
-  status         String   // ACTIVE, ARCHIVED
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model XeroContact {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  name           String
-  firstName      String?
-  lastName       String?
-  email          String?
-  phone          String?
-  type           String   // CUSTOMER, SUPPLIER, BOTH
-  status         String   // ACTIVE, ARCHIVED
-  
-  // Relations
-  projectMappings ProjectXeroContactMap[]
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model XeroInvoice {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  invoiceNumber  String
-  type           String   // ACCREC, ACCPAY
-  status         String   // DRAFT, SUBMITTED, AUTHORISED, PAID, VOIDED
-  date           DateTime
-  dueDate        DateTime?
-  total          Decimal  @db.Decimal(15, 2)
-  amountPaid     Decimal  @db.Decimal(15, 2) @default(0)
-  amountDue      Decimal  @db.Decimal(15, 2)
-  
-  // Contact info
-  contactId      String?
-  contactName    String?
-  
-  // Line items (stored as JSON for simplicity)
-  lineItems      Json
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model XeroBill {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  billNumber     String
-  status         String   // DRAFT, SUBMITTED, AUTHORISED, PAID, VOIDED
-  date           DateTime
-  dueDate        DateTime?
-  total          Decimal  @db.Decimal(15, 2)
-  amountPaid     Decimal  @db.Decimal(15, 2) @default(0)
-  amountDue      Decimal  @db.Decimal(15, 2)
-  
-  // Contact info
-  contactId      String?
-  contactName    String?
-  
-  // Line items
-  lineItems      Json
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model XeroPayment {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  amount         Decimal  @db.Decimal(15, 2)
-  date           DateTime
-  reference      String?
-  
-  // Payment allocations (stored as JSON)
-  allocations    Json
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model XeroBankTransaction {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  xeroId         String   @unique
-  bankAccountId  String
-  bankAccountName String
-  type           String   // RECEIVE, SPEND, TRANSFER
-  status         String   // AUTHORISED, DELETED
-  date           DateTime
-  amount         Decimal  @db.Decimal(15, 2)
-  reference      String?
-  description    String?
-  
-  // Line items
-  lineItems      Json
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-// Mapping tables
-
-model ProjectXeroTrackingMap {
-  id             String   @id @default(cuid())
-  projectId      String
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+// 8. Xero Project Mapping - link projects to tracking categories
+model XeroProjectMap {
+  id              String @id @default(cuid())
+  projectId       String
   trackingOptionId String
-  trackingOption   XeroTrackingOption @relation(fields: [trackingOptionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
   
-  createdAt      DateTime @default(now())
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trackingOption  XeroTrackingOption @relation(fields: [trackingOptionId], references: [id], onDelete: Cascade)
   
   @@unique([projectId, trackingOptionId])
-}
-
-model ProjectXeroContactMap {
-  id             String   @id @default(cuid())
-  projectId      String   @unique
-  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  contactId      String
-  contact        XeroContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  
-  isPrimary      Boolean  @default(true)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-// Derived reporting table
-
-model ActualEvent {
-  id             String   @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  projectId      String?
-  project        Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  
-  // Event details
-  basis          String   // cash, accrual
-  type           String   // income, outgo
-  amount         Decimal  @db.Decimal(15, 2)
-  occurredAt     DateTime
-  
-  // Source tracking
-  sourceType     String   // invoice, bill, payment, bank_transaction
-  sourceId       String   // Xero ID or manual entry ID
-  
-  // Classification
-  accountCode    String?
-  accountType    String?  // REVENUE, EXPENSE, etc.
-  contactId      String?
-  contactName    String?
-  
-  // Tracking
-  trackingOptionIds String[] // Array of tracking option IDs
-  
-  // Metadata
-  description    String?
-  reference      String?
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  // Relations
-  varianceMatches VarianceMatch[]
-  
-  @@index([organizationId, projectId, occurredAt])
-  @@index([organizationId, basis, type, occurredAt])
-}
-
-model XeroSyncLog {
-  id             String   @id @default(cuid())
-  connectionId   String
-  connection     XeroConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  
-  entityType     String   // account, contact, invoice, etc.
-  syncType       String   // initial, incremental
-  status         String   // success, partial, failed
-  
-  // Stats
-  totalRecords   Int      @default(0)
-  processedRecords Int    @default(0)
-  errorCount     Int      @default(0)
-  
-  // Timing
-  startedAt      DateTime
-  completedAt    DateTime?
-  durationMs     Int?
-  
-  // Error details
-  errorMessage   String?
-  errorDetails   Json?
-  
-  createdAt      DateTime @default(now())
 }
