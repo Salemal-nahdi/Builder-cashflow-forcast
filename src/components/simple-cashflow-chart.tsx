@@ -119,7 +119,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
                   textAnchor="middle"
                   className="text-xs fill-gray-600"
                 >
-                  {format(parseISO(period.date), 'MMM')}
+                  {format(period.date, 'MMM')}
                 </text>
 
                 {/* Balance value */}
@@ -181,7 +181,7 @@ export function SimpleCashflowChart({ periods, startingBalance = 0 }: SimpleCash
             {periodsWithBalance.map((period, index) => (
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-4 py-2 whitespace-nowrap text-gray-900">
-                  {format(parseISO(period.date), 'MMM yyyy')}
+                  {format(period.date, 'MMM yyyy')}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-right text-green-600">
                   ${(period.income || 0).toLocaleString()}
