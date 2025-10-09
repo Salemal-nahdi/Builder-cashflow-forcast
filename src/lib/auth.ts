@@ -1,6 +1,4 @@
 import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import EmailProvider from 'next-auth/providers/email'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
@@ -65,17 +63,6 @@ export const authOptions: NextAuthOptions = {
         }
       }
     }),
-    EmailProvider({
-      server: {
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT),
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      },
-      from: process.env.SMTP_USER,
-    }),
   ],
   callbacks: {
     session: async ({ session, token }) => {
@@ -96,7 +83,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    verifyRequest: '/auth/verify-request',
   },
   session: {
     strategy: 'jwt',
