@@ -8,18 +8,13 @@ const REDIRECT_URI = process.env.XERO_REDIRECT_URI!
  * Generate Xero OAuth authorization URL
  */
 export async function getXeroAuthUrl(state: string): Promise<string> {
+  const scopes = 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read'
+  
   const xero = new XeroClient({
     clientId: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     redirectUris: [REDIRECT_URI],
-    scopes: [
-      'openid',
-      'profile',
-      'email',
-      'accounting.transactions.read',
-      'accounting.contacts.read',
-      'accounting.settings.read'
-    ].join(' '),
+    scopes: scopes.split(' '),
     state: state
   })
 
@@ -30,18 +25,13 @@ export async function getXeroAuthUrl(state: string): Promise<string> {
  * Exchange authorization code for tokens
  */
 export async function exchangeCodeForTokens(code: string, state: string) {
+  const scopes = 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read'
+  
   const xero = new XeroClient({
     clientId: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     redirectUris: [REDIRECT_URI],
-    scopes: [
-      'openid',
-      'profile',
-      'email',
-      'accounting.transactions.read',
-      'accounting.contacts.read',
-      'accounting.settings.read'
-    ].join(' '),
+    scopes: scopes.split(' '),
     state: state
   })
 
