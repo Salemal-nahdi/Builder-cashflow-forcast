@@ -6,7 +6,8 @@ import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  // Temporarily disable adapter to avoid connection issues during session handling
+  // adapter: PrismaAdapter(prisma) as any,
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -80,25 +81,8 @@ export const authOptions: NextAuthOptions = {
     session: async ({ session, token }) => {
       if (session?.user && token?.sub) {
         session.user.id = token.sub
-        try {
-          // Get user with organization and roles
-          const user = await prisma.user.findUnique({
-            where: { id: token.sub },
-            include: {
-              organization: true,
-              roleAssignments: true,
-            },
-          })
-          if (user) {
-            session.user.organizationId = user.organizationId || ''
-            session.user.organization = user.organization || undefined
-            session.user.roles = user.roleAssignments.map(ra => ra.role)
-          }
-        } catch (error) {
-          console.error('Session callback error:', error)
-          // Don't fail the session, just use basic info
-          session.user.organizationId = token.organizationId as string || ''
-        }
+        // Use token data instead of database calls to avoid connection issues
+        session.user.organizationId = token.organizationId as string || ''
       }
       return session
     },
@@ -116,5 +100,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  debug: process.env.NODE_ENV === 'development',
 }
