@@ -9,7 +9,7 @@ export async function GET() {
       usersTable: false,
       organizationsTable: false,
       canCreateUser: false,
-      error: null
+      error: null as string | null
     }
 
     // Test basic connection
