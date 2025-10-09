@@ -71,7 +71,7 @@ export async function syncXeroData(organizationId: string) {
     if (invoicesResponse.body.invoices) {
       for (const invoice of invoicesResponse.body.invoices) {
         // Skip if not approved or not invoice
-        if (invoice.type !== 'ACCREC' || invoice.status === 'DRAFT' || invoice.status === 'DELETED') {
+        if (!invoice.type || invoice.type.toString() !== 'ACCREC' || !invoice.status || invoice.status.toString() === 'DRAFT' || invoice.status.toString() === 'DELETED') {
           continue
         }
 
@@ -88,7 +88,7 @@ export async function syncXeroData(organizationId: string) {
               name: `Invoice ${invoice.invoiceNumber || invoice.reference || ''}`,
               amount: invoice.total || 0,
               expectedDate: invoice.dueDate || invoice.date || new Date(),
-              status: invoice.status === 'PAID' ? 'paid' : 'invoiced',
+              status: invoice.status?.toString() === 'PAID' ? 'paid' : 'invoiced',
               xeroInvoiceId: invoice.invoiceID
             }
           })
@@ -100,7 +100,7 @@ export async function syncXeroData(organizationId: string) {
             data: {
               amount: invoice.total || 0,
               expectedDate: invoice.dueDate || invoice.date || new Date(),
-              status: invoice.status === 'PAID' ? 'paid' : 'invoiced'
+              status: invoice.status?.toString() === 'PAID' ? 'paid' : 'invoiced'
             }
           })
         }
@@ -113,7 +113,7 @@ export async function syncXeroData(organizationId: string) {
     if (billsResponse.body.invoices) {
       for (const bill of billsResponse.body.invoices) {
         // Skip if not bill
-        if (bill.type !== 'ACCPAY' || bill.status === 'DRAFT' || bill.status === 'DELETED') {
+        if (!bill.type || bill.type.toString() !== 'ACCPAY' || !bill.status || bill.status.toString() === 'DRAFT' || bill.status.toString() === 'DELETED') {
           continue
         }
 
@@ -131,7 +131,7 @@ export async function syncXeroData(organizationId: string) {
               amount: bill.total || 0,
               expectedDate: bill.dueDate || bill.date || new Date(),
               vendor: bill.contact?.name,
-              status: bill.status === 'PAID' ? 'paid' : 'billed',
+              status: bill.status?.toString() === 'PAID' ? 'paid' : 'billed',
               xeroBillId: bill.invoiceID
             }
           })
@@ -144,7 +144,7 @@ export async function syncXeroData(organizationId: string) {
               amount: bill.total || 0,
               expectedDate: bill.dueDate || bill.date || new Date(),
               vendor: bill.contact?.name,
-              status: bill.status === 'PAID' ? 'paid' : 'billed'
+              status: bill.status?.toString() === 'PAID' ? 'paid' : 'billed'
             }
           })
         }
