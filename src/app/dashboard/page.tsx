@@ -72,7 +72,16 @@ export default async function DashboardPage() {
   }
 
   if (!organization) {
-    redirect('/auth/signin')
+    // Organization should always exist at this point, but handle edge case
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">Unable to load organization. Please refresh the page.</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Generate forecast data starting from TODAY
